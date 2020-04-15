@@ -35,11 +35,15 @@
             this.tblLayoutLogo = new System.Windows.Forms.TableLayoutPanel();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.lblLogo = new System.Windows.Forms.Label();
+            this.tblLayoutStatus = new System.Windows.Forms.TableLayoutPanel();
+            this.lblStatus1 = new System.Windows.Forms.Label();
+            this.lblStatus2 = new System.Windows.Forms.Label();
             this.tblLayoutMain.SuspendLayout();
             this.tblLayoutTop.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.chart1)).BeginInit();
             this.tblLayoutLogo.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
+            this.tblLayoutStatus.SuspendLayout();
             this.SuspendLayout();
             // 
             // tblLayoutMain
@@ -109,6 +113,7 @@
             legend1.Alignment = System.Drawing.StringAlignment.Far;
             legend1.BackColor = System.Drawing.SystemColors.Control;
             legend1.DockedToChartArea = "ChartArea1";
+            legend1.Docking = System.Windows.Forms.DataVisualization.Charting.Docking.Left;
             legend1.Name = "Legend1";
             this.chart1.Legends.Add(legend1);
             this.chart1.Location = new System.Drawing.Point(3, 182);
@@ -135,11 +140,13 @@
             // 
             // tblLayoutLogo
             // 
-            this.tblLayoutLogo.ColumnCount = 2;
+            this.tblLayoutLogo.ColumnCount = 3;
             this.tblLayoutLogo.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 23F));
-            this.tblLayoutLogo.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 77F));
+            this.tblLayoutLogo.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 62F));
+            this.tblLayoutLogo.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 15F));
             this.tblLayoutLogo.Controls.Add(this.pictureBox1, 0, 0);
             this.tblLayoutLogo.Controls.Add(this.lblLogo, 1, 0);
+            this.tblLayoutLogo.Controls.Add(this.tblLayoutStatus, 2, 0);
             this.tblLayoutLogo.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tblLayoutLogo.Location = new System.Drawing.Point(3, 3);
             this.tblLayoutLogo.Name = "tblLayoutLogo";
@@ -163,13 +170,56 @@
             // 
             this.lblLogo.AutoSize = true;
             this.lblLogo.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.lblLogo.Font = new System.Drawing.Font("宋体", 35F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.lblLogo.Font = new System.Drawing.Font("宋体", 32F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.lblLogo.Location = new System.Drawing.Point(181, 0);
             this.lblLogo.Name = "lblLogo";
-            this.lblLogo.Size = new System.Drawing.Size(594, 78);
+            this.lblLogo.Size = new System.Drawing.Size(476, 78);
             this.lblLogo.TabIndex = 1;
             this.lblLogo.Text = "车辆空调温度检测系统";
             this.lblLogo.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // tblLayoutStatus
+            // 
+            this.tblLayoutStatus.ColumnCount = 1;
+            this.tblLayoutStatus.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tblLayoutStatus.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 20F));
+            this.tblLayoutStatus.Controls.Add(this.lblStatus1, 0, 0);
+            this.tblLayoutStatus.Controls.Add(this.lblStatus2, 0, 1);
+            this.tblLayoutStatus.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tblLayoutStatus.Location = new System.Drawing.Point(663, 3);
+            this.tblLayoutStatus.Name = "tblLayoutStatus";
+            this.tblLayoutStatus.RowCount = 2;
+            this.tblLayoutStatus.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tblLayoutStatus.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tblLayoutStatus.Size = new System.Drawing.Size(112, 72);
+            this.tblLayoutStatus.TabIndex = 2;
+            // 
+            // lblStatus1
+            // 
+            this.lblStatus1.AutoSize = true;
+            this.lblStatus1.BackColor = System.Drawing.Color.Red;
+            this.lblStatus1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.lblStatus1.Font = new System.Drawing.Font("宋体", 16F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.lblStatus1.Location = new System.Drawing.Point(3, 0);
+            this.lblStatus1.Name = "lblStatus1";
+            this.lblStatus1.Size = new System.Drawing.Size(106, 36);
+            this.lblStatus1.TabIndex = 0;
+            this.lblStatus1.Text = "连接状态";
+            this.lblStatus1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // lblStatus2
+            // 
+            this.lblStatus2.AutoSize = true;
+            this.lblStatus2.BackColor = System.Drawing.Color.Red;
+            this.lblStatus2.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.lblStatus2.Font = new System.Drawing.Font("宋体", 16F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.lblStatus2.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.lblStatus2.Location = new System.Drawing.Point(3, 36);
+            this.lblStatus2.Name = "lblStatus2";
+            this.lblStatus2.Size = new System.Drawing.Size(106, 36);
+            this.lblStatus2.TabIndex = 1;
+            this.lblStatus2.Text = "异常";
+            this.lblStatus2.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // Main
             // 
@@ -189,6 +239,8 @@
             this.tblLayoutLogo.ResumeLayout(false);
             this.tblLayoutLogo.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
+            this.tblLayoutStatus.ResumeLayout(false);
+            this.tblLayoutStatus.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -204,6 +256,9 @@
         private System.Windows.Forms.TableLayoutPanel tblLayoutLogo;
         private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.Label lblLogo;
+        private System.Windows.Forms.TableLayoutPanel tblLayoutStatus;
+        private System.Windows.Forms.Label lblStatus1;
+        private System.Windows.Forms.Label lblStatus2;
     }
 }
 

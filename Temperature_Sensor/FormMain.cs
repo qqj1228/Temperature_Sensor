@@ -22,15 +22,20 @@ namespace Temperature_Sensor {
         private readonly Temper m_tester;
         private readonly SerialPortCS.SerialPortClass m_sp;
         private string m_serialRecvBuf;
-        readonly System.Timers.Timer m_timerInterval;
-        readonly System.Timers.Timer m_timerTotal;
+        private readonly System.Timers.Timer m_timerInterval;
+        private readonly System.Timers.Timer m_timerTotal;
+        readonly System.Timers.Timer m_timerTick;
         private DateTime m_start;
+        private bool m_bLastStatus;
+        private static object m_lockObj;
 
         public Main() {
             InitializeComponent();
             m_bTesting = false;
             m_lastHeight = this.Height;
             m_serialRecvBuf = "";
+            m_bLastStatus = false;
+            m_lockObj = new object();
             this.Text = Properties.Resources.MainTitle + " Ver: " + MainFileVersion.AssemblyVersion;
             m_log = new LoggerCS.Logger(".\\log", LoggerCS.EnumLogLevel.LogLevelAll, true, 100);
             m_log.TraceInfo("==================================================================");
@@ -42,7 +47,8 @@ namespace Temperature_Sensor {
                 MessageBox.Show(ex.Message.Split(':')[0] + "配置文件读取出错，将会使用默认配置", "初始化错误", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
             m_tester = new Temper(m_log, m_cfg);
-            if (!m_tester.TCPClientInit()) {
+            m_tester.TCPClientInit();
+            if (!m_tester.GetInitStatus()) {
                 MessageBox.Show("无法连接WiFi串口服务器", "初始化错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             if (m_cfg.Setting.Data.ScannerPort.Length > 0) {
@@ -69,6 +75,10 @@ namespace Temperature_Sensor {
             m_timerTotal.Elapsed += new System.Timers.ElapsedEventHandler(OnTimeTotal);
             m_timerTotal.AutoReset = true;
             m_timerTotal.Enabled = false;
+            m_timerTick = new System.Timers.Timer(m_cfg.Setting.Data.Interval); // 心跳间隔同采样间隔一致
+            m_timerTick.Elapsed += new System.Timers.ElapsedEventHandler(OnTimeTick);
+            m_timerTick.AutoReset = true;
+            m_timerTick.Enabled = true;
         }
 
         void SerialDataReceived(object sender, SerialDataReceivedEventArgs e, byte[] bits) {
@@ -102,6 +112,7 @@ namespace Temperature_Sensor {
         }
 
         private void OnTimeInterval(object source, System.Timers.ElapsedEventArgs e) {
+            m_timerTick.Enabled = false;
             m_tester.GetData(m_start);
             this.Invoke((EventHandler)delegate {
                 this.chart1.DataBind();
@@ -111,6 +122,7 @@ namespace Temperature_Sensor {
         private void OnTimeTotal(object source, System.Timers.ElapsedEventArgs e) {
             m_timerInterval.Enabled = false;
             m_timerTotal.Enabled = false;
+            m_timerTick.Enabled = true;
             DataTable dt = m_tester.GetDtTemper();
             m_tester.ExportResultFile();
             this.Invoke((EventHandler)delegate {
@@ -119,8 +131,30 @@ namespace Temperature_Sensor {
             m_bTesting = false;
         }
 
+        private void OnTimeTick(object source, System.Timers.ElapsedEventArgs e) {
+            lock (m_lockObj) {
+                bool bStatus = m_tester.SafeTestConnect(1);
+                if (m_bLastStatus != bStatus) {
+                    if (bStatus) {
+                        this.Invoke((EventHandler)delegate {
+                            this.lblStatus1.BackColor = Color.GreenYellow;
+                            this.lblStatus2.BackColor = Color.GreenYellow;
+                            this.lblStatus2.Text = "已连接";
+                        });
+                    } else {
+                        this.Invoke((EventHandler)delegate {
+                            this.lblStatus1.BackColor = Color.Red;
+                            this.lblStatus2.BackColor = Color.Red;
+                            this.lblStatus2.Text = "异常";
+                        });
+                    }
+                }
+                m_bLastStatus = bStatus;
+            }
+        }
+
         private void StartTest() {
-            m_log.TraceInfo(">>>>> Get VIN: " + m_tester.StrVIN + ", Ver: " + MainFileVersion.AssemblyVersion + "<<<<<");
+            m_log.TraceInfo(">>>>> Get VIN: " + m_tester.StrVIN + ", Ver: " + MainFileVersion.AssemblyVersion + " <<<<<");
             m_serialRecvBuf = "";
             this.Invoke((EventHandler)delegate {
                 this.lblInfo.Text = "检测开始。。。";
@@ -128,6 +162,7 @@ namespace Temperature_Sensor {
             m_tester.ClearPoints();
             m_timerInterval.Enabled = true;
             m_timerTotal.Enabled = true;
+            m_timerTick.Enabled = false;
             m_start = DateTime.Now;
             m_tester.GetData(m_start);
             this.Invoke((EventHandler)delegate {
@@ -143,6 +178,9 @@ namespace Temperature_Sensor {
             ResizeFont(this.lblLogo, scale);
             ResizeFont(this.txtBoxVIN, scale);
             ResizeFont(this.label1, scale);
+            ResizeFont(this.lblInfo, scale);
+            ResizeFont(this.lblStatus1, scale);
+            ResizeFont(this.lblStatus2, scale);
             m_lastHeight = this.Height;
         }
 
@@ -188,6 +226,12 @@ namespace Temperature_Sensor {
             if (m_sp != null) {
                 m_sp.ClosePort();
             }
+            m_timerInterval.Enabled = false;
+            m_timerTotal.Enabled = false;
+            m_timerTick.Enabled = false;
+            m_timerInterval.Dispose();
+            m_timerTotal.Dispose();
+            m_timerTick.Dispose();
         }
     }
 

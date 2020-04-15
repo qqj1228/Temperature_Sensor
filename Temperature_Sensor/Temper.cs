@@ -22,6 +22,8 @@ namespace Temperature_Sensor {
         private readonly byte[] m_recvBuf;
         private TcpClient m_client;
         private NetworkStream m_clientStream;
+        private bool m_bInited; // 是否初始化过标志，未初始化的话使用m_client.Connected或m_client.Client会抛出NullReference异常
+        private bool m_bLastTestStatus;
 
         public string StrVIN { get; set; }
 
@@ -32,6 +34,8 @@ namespace Temperature_Sensor {
             ChartInit();
             m_bufSize = 4096;
             m_recvBuf = new byte[m_bufSize];
+            m_bInited = false;
+            m_bLastTestStatus = false;
         }
 
         ~Temper() {
@@ -43,11 +47,14 @@ namespace Temperature_Sensor {
             }
         }
 
-        public bool TCPClientInit() {
+        public bool TCPClientInit(bool bLog = true) {
             try {
                 m_client = new TcpClient(m_cfg.Setting.Data.TCPServerIP, m_cfg.Setting.Data.TCPServerPort);
                 m_clientStream = m_client.GetStream();
-                return true;
+                if (bLog || !m_bLastTestStatus) {
+                    m_log.TraceInfo("TcpClient init success");
+                }
+                m_bInited = true;
             } catch (Exception ex) {
                 if (m_clientStream != null) {
                     m_clientStream.Close();
@@ -55,9 +62,17 @@ namespace Temperature_Sensor {
                 if (m_client != null) {
                     m_client.Close();
                 }
-                m_log.TraceError("TcpClient init error: " + ex.Message);
-                return false;
+                if (bLog || m_bLastTestStatus) {
+                    m_log.TraceError("TcpClient init error: " + ex.Message);
+                }
+                m_bInited = false;
             }
+            m_bLastTestStatus = m_bInited;
+            return m_bInited;
+        }
+
+        public bool GetInitStatus() {
+            return m_bInited;
         }
 
         public DataTable GetDtTemper() {
@@ -80,9 +95,16 @@ namespace Temperature_Sensor {
         /// 以string[]格式返回，[通道0, 通道1]
         /// </summary>
         public string[] GetTemper() {
-            bool bConnected = true;
+            // 获取当前连接状态
+            bool bConnected = TestConnect();
+            // 发送读取温度命令
+            if (!bConnected) {
+                bConnected = TCPClientInit();
+                if (!bConnected) {
+                    return SplitTemper("");
+                }
+            }
             string strMsg = "#01\r";
-            // 发送命令
             byte[] sendMsg = Encoding.ASCII.GetBytes(strMsg);
             try {
                 m_clientStream.Write(sendMsg, 0, sendMsg.Length);
@@ -145,6 +167,48 @@ namespace Temperature_Sensor {
                 CHKSUM += (byte)item;
             }
             return CHKSUM.ToString("X2");
+        }
+
+        private bool TestConnect() {
+            if (!m_bInited) {
+                return false;
+            }
+            Socket cltSocket = m_client.Client;
+            bool bRet = false;
+            // This is how you can determine whether a socket is still connected.
+            bool blockingState = cltSocket.Blocking;
+            try {
+                byte[] tmp = new byte[1];
+                cltSocket.Blocking = false;
+                cltSocket.Send(tmp, 0, 0);
+                bRet = true;
+            } catch (SocketException ex) {
+                // 10035 == WSAEWOULDBLOCK
+                if (ex.NativeErrorCode.Equals(10035)) {
+                    bRet = true;
+                    m_log.TraceWarning(string.Format("Still Connected, but the Send would block[{0}]", ex.NativeErrorCode));
+                } else {
+                    bRet = false;
+                    if (m_bLastTestStatus) {
+                        m_log.TraceError(string.Format("Disconnected: {0}[{1}]", ex.Message, ex.NativeErrorCode));
+                    }
+                }
+            } finally {
+                m_bLastTestStatus = bRet;
+                cltSocket.Blocking = blockingState;
+            }
+            return bRet;
+        }
+
+        public bool SafeTestConnect(int times = 3) {
+            bool bRet = false;
+            for (int i = 0; i < times; i++) {
+                bRet = bRet || TestConnect();
+            }
+            for (int i = 0; i < times && !bRet; i++) {
+                bRet = TCPClientInit(false);
+            }
+            return bRet;
         }
 
         public void GetData(DateTime start) {

@@ -16,13 +16,18 @@ namespace SimTemperData {
             TcpListener TCPListener = new TcpListener(IPAddress.Any, TCPPort);
             TCPListener.Start();
             IPEndPoint serverAddress = (IPEndPoint)TCPListener.LocalEndpoint;
-            Console.WriteLine(string.Format("TCP Server start listenning on {0}:{1}", serverAddress.Address, serverAddress.Port));
+            string time = DateTime.Now.ToString("HH:mm:ss.fff");
+            Console.WriteLine(string.Format("{0} - TCP Server start listenning on {1}:{2}", time, serverAddress.Address, serverAddress.Port));
             while (true) {
                 try {
                     TcpClient client = TCPListener.AcceptTcpClient();
+                    IPEndPoint remoteAddress = (IPEndPoint)client.Client.RemoteEndPoint;
+                    time = DateTime.Now.ToString("HH:mm:ss.fff");
+                    Console.WriteLine(string.Format("{2} - TCP listener accept client: {0}:{1}", remoteAddress.Address, remoteAddress.Port, time));
                     Task.Factory.StartNew(HandleClient, client);
                 } catch (Exception ex) {
-                    Console.WriteLine("TCP listener occur error: " + ex.Message);
+                    time = DateTime.Now.ToString("HH:mm:ss.fff");
+                    Console.WriteLine(time + " - TCP listener occur error: " + ex.Message);
                 }
             }
         }
@@ -33,11 +38,13 @@ namespace SimTemperData {
             byte[] recv = new byte[BufSize];
             string strRecv;
             int bytesRead;
+            string time;
             while (true) {
                 try {
                     bytesRead = clientStream.Read(recv, 0, BufSize);
                 } catch (Exception ex) {
-                    Console.WriteLine("TCP client occur error: " + ex.Message);
+                    time = DateTime.Now.ToString("HH:mm:ss.fff");
+                    Console.WriteLine(time + " - TCP client occur error: " + ex.Message);
                     clientStream.Close();
                     client.Close();
                     return;
@@ -47,7 +54,8 @@ namespace SimTemperData {
                 }
                 strRecv = Encoding.ASCII.GetString(recv, 0, bytesRead);
                 IPEndPoint remoteAddress = (IPEndPoint)client.Client.RemoteEndPoint;
-                Console.WriteLine(string.Format("Received message[{0}], from {1}:{2}", strRecv.Replace("\r", "\\r"), remoteAddress.Address, remoteAddress.Port));
+                time = DateTime.Now.ToString("HH:mm:ss.fff");
+                Console.WriteLine(string.Format("{3} - Received message[{0}], from {1}:{2}", strRecv.Replace("\r", "\\r"), remoteAddress.Address, remoteAddress.Port, time));
                 if (CMD == strRecv) {
                     Random rd = new Random();
                     string strSend = ">+" + rd.Next(20, 40).ToString("d3") + "." + rd.Next(0, 100).ToString("d2");
@@ -55,7 +63,8 @@ namespace SimTemperData {
                     byte[] sendMessage = Encoding.ASCII.GetBytes(strSend);
                     clientStream.Write(sendMessage, 0, sendMessage.Length);
                     clientStream.Flush();
-                    Console.WriteLine(string.Format("Sent message[{0}], to {1}:{2}", strSend.Replace("\r", "\\r"), remoteAddress.Address, remoteAddress.Port));
+                    time = DateTime.Now.ToString("HH:mm:ss.fff");
+                    Console.WriteLine(string.Format("{3} - Sent message[{0}], to {1}:{2}", strSend.Replace("\r", "\\r"), remoteAddress.Address, remoteAddress.Port, time));
                 }
             }
             clientStream.Close();
