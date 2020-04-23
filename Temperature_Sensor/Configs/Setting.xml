@@ -12,4 +12,14 @@
   <Interval>500</Interval>
   <!-- 温度采样总时间，单位ms -->
   <TotalTime>10000</TotalTime>
+  <!-- 数据库IP地址 -->
+  <DBIP>127.0.0.1</DBIP>
+  <!-- 数据库端口号 -->
+  <DBPort>1433</DBPort>
+  <!-- 数据库用户名 -->
+  <DBPort>sa</DBPort>
+  <!-- 数据库密码 -->
+  <DBPort>sh49</DBPort>
+  <!-- 设定温度值，单位℃，低于此温度判为不合格 -->
+  <STDTemper>10</STDTemper>
 </Setting>

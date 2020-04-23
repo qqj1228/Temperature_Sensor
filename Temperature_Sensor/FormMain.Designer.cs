@@ -26,6 +26,7 @@
             System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
             System.Windows.Forms.DataVisualization.Charting.Legend legend1 = new System.Windows.Forms.DataVisualization.Charting.Legend();
             System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
             this.tblLayoutMain = new System.Windows.Forms.TableLayoutPanel();
             this.tblLayoutTop = new System.Windows.Forms.TableLayoutPanel();
             this.label1 = new System.Windows.Forms.Label();
@@ -59,9 +60,9 @@
             this.tblLayoutMain.Name = "tblLayoutMain";
             this.tblLayoutMain.RowCount = 4;
             this.tblLayoutMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 15F));
-            this.tblLayoutMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 17F));
+            this.tblLayoutMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 14F));
             this.tblLayoutMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 53F));
-            this.tblLayoutMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 15F));
+            this.tblLayoutMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 18F));
             this.tblLayoutMain.Size = new System.Drawing.Size(784, 561);
             this.tblLayoutMain.TabIndex = 0;
             // 
@@ -77,17 +78,17 @@
             this.tblLayoutTop.Name = "tblLayoutTop";
             this.tblLayoutTop.RowCount = 1;
             this.tblLayoutTop.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tblLayoutTop.Size = new System.Drawing.Size(778, 89);
+            this.tblLayoutTop.Size = new System.Drawing.Size(778, 72);
             this.tblLayoutTop.TabIndex = 0;
             // 
             // label1
             // 
             this.label1.AutoSize = true;
             this.label1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.label1.Font = new System.Drawing.Font("宋体", 50F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.label1.Font = new System.Drawing.Font("宋体", 40F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.label1.Location = new System.Drawing.Point(3, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(172, 89);
+            this.label1.Size = new System.Drawing.Size(172, 72);
             this.label1.TabIndex = 0;
             this.label1.Text = "VIN:";
             this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -96,10 +97,10 @@
             // 
             this.txtBoxVIN.CharacterCasing = System.Windows.Forms.CharacterCasing.Upper;
             this.txtBoxVIN.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.txtBoxVIN.Font = new System.Drawing.Font("宋体", 50F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.txtBoxVIN.Font = new System.Drawing.Font("宋体", 40F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.txtBoxVIN.Location = new System.Drawing.Point(181, 3);
             this.txtBoxVIN.Name = "txtBoxVIN";
-            this.txtBoxVIN.Size = new System.Drawing.Size(594, 84);
+            this.txtBoxVIN.Size = new System.Drawing.Size(594, 68);
             this.txtBoxVIN.TabIndex = 1;
             this.txtBoxVIN.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.TxtBoxVIN_KeyPress);
             // 
@@ -116,7 +117,7 @@
             legend1.Docking = System.Windows.Forms.DataVisualization.Charting.Docking.Left;
             legend1.Name = "Legend1";
             this.chart1.Legends.Add(legend1);
-            this.chart1.Location = new System.Drawing.Point(3, 182);
+            this.chart1.Location = new System.Drawing.Point(3, 165);
             this.chart1.Name = "chart1";
             series1.ChartArea = "ChartArea1";
             series1.Legend = "Legend1";
@@ -130,10 +131,10 @@
             // 
             this.lblInfo.AutoSize = true;
             this.lblInfo.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.lblInfo.Font = new System.Drawing.Font("宋体", 50F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.lblInfo.Location = new System.Drawing.Point(3, 476);
+            this.lblInfo.Font = new System.Drawing.Font("宋体", 30F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.lblInfo.Location = new System.Drawing.Point(3, 459);
             this.lblInfo.Name = "lblInfo";
-            this.lblInfo.Size = new System.Drawing.Size(778, 85);
+            this.lblInfo.Size = new System.Drawing.Size(778, 102);
             this.lblInfo.TabIndex = 2;
             this.lblInfo.Text = "等待检测空调温度";
             this.lblInfo.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -142,8 +143,8 @@
             // 
             this.tblLayoutLogo.ColumnCount = 3;
             this.tblLayoutLogo.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 23F));
-            this.tblLayoutLogo.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 62F));
-            this.tblLayoutLogo.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 15F));
+            this.tblLayoutLogo.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 60F));
+            this.tblLayoutLogo.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 17F));
             this.tblLayoutLogo.Controls.Add(this.pictureBox1, 0, 0);
             this.tblLayoutLogo.Controls.Add(this.lblLogo, 1, 0);
             this.tblLayoutLogo.Controls.Add(this.tblLayoutStatus, 2, 0);
@@ -170,10 +171,10 @@
             // 
             this.lblLogo.AutoSize = true;
             this.lblLogo.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.lblLogo.Font = new System.Drawing.Font("宋体", 32F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.lblLogo.Font = new System.Drawing.Font("宋体", 26F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.lblLogo.Location = new System.Drawing.Point(181, 0);
             this.lblLogo.Name = "lblLogo";
-            this.lblLogo.Size = new System.Drawing.Size(476, 78);
+            this.lblLogo.Size = new System.Drawing.Size(460, 78);
             this.lblLogo.TabIndex = 1;
             this.lblLogo.Text = "车辆空调温度检测系统";
             this.lblLogo.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -186,12 +187,12 @@
             this.tblLayoutStatus.Controls.Add(this.lblStatus1, 0, 0);
             this.tblLayoutStatus.Controls.Add(this.lblStatus2, 0, 1);
             this.tblLayoutStatus.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tblLayoutStatus.Location = new System.Drawing.Point(663, 3);
+            this.tblLayoutStatus.Location = new System.Drawing.Point(647, 3);
             this.tblLayoutStatus.Name = "tblLayoutStatus";
             this.tblLayoutStatus.RowCount = 2;
             this.tblLayoutStatus.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tblLayoutStatus.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tblLayoutStatus.Size = new System.Drawing.Size(112, 72);
+            this.tblLayoutStatus.Size = new System.Drawing.Size(128, 72);
             this.tblLayoutStatus.TabIndex = 2;
             // 
             // lblStatus1
@@ -199,12 +200,12 @@
             this.lblStatus1.AutoSize = true;
             this.lblStatus1.BackColor = System.Drawing.Color.Red;
             this.lblStatus1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.lblStatus1.Font = new System.Drawing.Font("宋体", 16F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.lblStatus1.Font = new System.Drawing.Font("宋体", 14F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.lblStatus1.Location = new System.Drawing.Point(3, 0);
             this.lblStatus1.Name = "lblStatus1";
-            this.lblStatus1.Size = new System.Drawing.Size(106, 36);
+            this.lblStatus1.Size = new System.Drawing.Size(122, 36);
             this.lblStatus1.TabIndex = 0;
-            this.lblStatus1.Text = "连接状态";
+            this.lblStatus1.Text = "测温站:000";
             this.lblStatus1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // lblStatus2
@@ -212,13 +213,13 @@
             this.lblStatus2.AutoSize = true;
             this.lblStatus2.BackColor = System.Drawing.Color.Red;
             this.lblStatus2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.lblStatus2.Font = new System.Drawing.Font("宋体", 16F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.lblStatus2.Font = new System.Drawing.Font("宋体", 14F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.lblStatus2.ForeColor = System.Drawing.SystemColors.ControlText;
             this.lblStatus2.Location = new System.Drawing.Point(3, 36);
             this.lblStatus2.Name = "lblStatus2";
-            this.lblStatus2.Size = new System.Drawing.Size(106, 36);
+            this.lblStatus2.Size = new System.Drawing.Size(122, 36);
             this.lblStatus2.TabIndex = 1;
-            this.lblStatus2.Text = "异常";
+            this.lblStatus2.Text = "连接异常";
             this.lblStatus2.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // Main
@@ -227,6 +228,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(784, 561);
             this.Controls.Add(this.tblLayoutMain);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Main";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Main_FormClosing);
             this.Load += new System.EventHandler(this.Main_Load);

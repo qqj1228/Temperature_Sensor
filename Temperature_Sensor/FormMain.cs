@@ -19,6 +19,7 @@ namespace Temperature_Sensor {
         private float m_lastHeight;
         private readonly LoggerCS.Logger m_log;
         private readonly Config m_cfg;
+        private readonly Model m_db;
         private readonly Temper m_tester;
         private readonly SerialPortCS.SerialPortClass m_sp;
         private string m_serialRecvBuf;
@@ -28,6 +29,7 @@ namespace Temperature_Sensor {
         private DateTime m_start;
         private bool m_bLastStatus;
         private static object m_lockObj;
+        private int m_counterFailed;
 
         public Main() {
             InitializeComponent();
@@ -36,6 +38,7 @@ namespace Temperature_Sensor {
             m_serialRecvBuf = "";
             m_bLastStatus = false;
             m_lockObj = new object();
+            m_counterFailed = 0;
             this.Text = Properties.Resources.MainTitle + " Ver: " + MainFileVersion.AssemblyVersion;
             m_log = new LoggerCS.Logger(".\\log", LoggerCS.EnumLogLevel.LogLevelAll, true, 100);
             m_log.TraceInfo("==================================================================");
@@ -46,7 +49,8 @@ namespace Temperature_Sensor {
             } catch (ApplicationException ex) {
                 MessageBox.Show(ex.Message.Split(':')[0] + "配置文件读取出错，将会使用默认配置", "初始化错误", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
-            m_tester = new Temper(m_log, m_cfg);
+            m_db = new Model(m_cfg, m_log);
+            m_tester = new Temper(m_log, m_cfg, m_db);
             m_tester.TCPClientInit();
             if (!m_tester.GetInitStatus()) {
                 MessageBox.Show("无法连接WiFi串口服务器", "初始化错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -123,10 +127,30 @@ namespace Temperature_Sensor {
             m_timerInterval.Enabled = false;
             m_timerTotal.Enabled = false;
             m_timerTick.Enabled = true;
-            DataTable dt = m_tester.GetDtTemper();
-            m_tester.ExportResultFile();
+            string strTimeStamp = m_tester.GetTimeStamp();
+            double dSTD = m_cfg.Setting.Data.STDTemper;
+            bool bResult = m_tester.GetResult(dSTD, out double dAverage1, out double dAverage2);
+            m_tester.ExportResultFile(bResult, strTimeStamp);
+            m_tester.WriteDB(bResult, strTimeStamp);
+            if (bResult) {
+                m_counterFailed = 0;
+            } else {
+                ++m_counterFailed;
+            }
             this.Invoke((EventHandler)delegate {
-                this.lblInfo.Text = "检测结束";
+                if (bResult) {
+                    this.lblInfo.ForeColor = Color.Green;
+                    this.lblInfo.Text = "合格";
+                } else {
+                    this.lblInfo.ForeColor = Color.Red;
+                    this.lblInfo.Text = "不合格";
+                }
+                this.lblInfo.Text += ", 设定温度: " + dSTD.ToString("F1") + "℃, 平均温度: " + dAverage1.ToString("F1") + "℃/" + dAverage2.ToString("F1") + "℃";
+                if (m_counterFailed >= m_cfg.Setting.Data.TestFailedQty) {
+                    this.lblInfo.Text += ", 已连续" + m_cfg.Setting.Data.TestFailedQty.ToString() + "辆车不合格";
+                    this.lblInfo.BackColor = Color.Red;
+                    this.lblInfo.ForeColor = Color.White;
+                }
             });
             m_bTesting = false;
         }
@@ -145,7 +169,7 @@ namespace Temperature_Sensor {
                         this.Invoke((EventHandler)delegate {
                             this.lblStatus1.BackColor = Color.Red;
                             this.lblStatus2.BackColor = Color.Red;
-                            this.lblStatus2.Text = "异常";
+                            this.lblStatus2.Text = "连接异常";
                         });
                     }
                 }
@@ -157,7 +181,9 @@ namespace Temperature_Sensor {
             m_log.TraceInfo(">>>>> Get VIN: " + m_tester.StrVIN + ", Ver: " + MainFileVersion.AssemblyVersion + " <<<<<");
             m_serialRecvBuf = "";
             this.Invoke((EventHandler)delegate {
-                this.lblInfo.Text = "检测开始。。。";
+                this.lblInfo.BackColor = this.lblLogo.BackColor;
+                this.lblInfo.ForeColor = this.lblLogo.ForeColor;
+                this.lblInfo.Text = "开始检测。。。";
             });
             m_tester.ClearPoints();
             m_timerInterval.Enabled = true;
@@ -205,21 +231,29 @@ namespace Temperature_Sensor {
         private void Main_Load(object sender, EventArgs e) {
             this.chart1.Series[0].Name = "空调温度1";
             this.chart1.Series.Add("空调温度2");
+            this.chart1.Series.Add("设定温度");
             this.chart1.Series[1].Color = Color.SeaGreen;
+            this.chart1.Series[2].Color = Color.Red;
             this.chart1.Series[0].ChartType = SeriesChartType.FastLine;
             this.chart1.Series[1].ChartType = SeriesChartType.FastLine;
+            this.chart1.Series[2].ChartType = SeriesChartType.FastLine;
             this.chart1.Series[0].BorderWidth = 2;
             this.chart1.Series[1].BorderWidth = 2;
+            this.chart1.Series[2].BorderWidth = 2;
             this.chart1.Series[0].XValueMember = "Time";
             this.chart1.Series[0].YValueMembers = "Temper1";
             this.chart1.Series[1].XValueMember = "Time";
             this.chart1.Series[1].YValueMembers = "Temper2";
+            this.chart1.Series[2].XValueMember = "Time";
+            this.chart1.Series[2].YValueMembers = "TemperSTD";
             this.chart1.ChartAreas[0].AxisX.IsStartedFromZero = true;
             this.chart1.ChartAreas[0].AxisX.Minimum = 0;
             this.chart1.ChartAreas[0].AxisX.Interval = 1;
             this.chart1.ChartAreas[0].AxisX.Title = "时间（秒）";
             this.chart1.ChartAreas[0].AxisY.Title = "温度（℃）";
             this.chart1.DataSource = m_tester.GetDtTemper();
+            // 测温站编号，取Wifi串口服务器的IP地址最后一位十进制值
+            this.lblStatus1.Text = "测温站:" + m_cfg.Setting.Data.TCPServerIP.Split('.')[3];
         }
 
         private void Main_FormClosing(object sender, FormClosingEventArgs e) {

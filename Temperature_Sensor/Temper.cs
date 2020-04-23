@@ -17,6 +17,7 @@ namespace Temperature_Sensor {
         private const int NormalLength = 7; // RTD模块返回正常读数的字符串长度
         private readonly LoggerCS.Logger m_log;
         private readonly Config m_cfg;
+        private readonly Model m_db;
         private readonly DataTable m_dtTemper;
         private readonly int m_bufSize;
         private readonly byte[] m_recvBuf;
@@ -24,12 +25,14 @@ namespace Temperature_Sensor {
         private NetworkStream m_clientStream;
         private bool m_bInited; // 是否初始化过标志，未初始化的话使用m_client.Connected或m_client.Client会抛出NullReference异常
         private bool m_bLastTestStatus;
+        private string m_strTimeStamp; // 当前检测过程的时间戳
 
         public string StrVIN { get; set; }
 
-        public Temper(LoggerCS.Logger logger, Config config) {
+        public Temper(LoggerCS.Logger logger, Config config, Model db) {
             m_log = logger;
             m_cfg = config;
+            m_db = db;
             m_dtTemper = new DataTable("Temper");
             ChartInit();
             m_bufSize = 4096;
@@ -83,10 +86,12 @@ namespace Temperature_Sensor {
             m_dtTemper.Columns.Add("Time");
             m_dtTemper.Columns.Add("Temper1");
             m_dtTemper.Columns.Add("Temper2");
+            m_dtTemper.Columns.Add("TemperSTD");
             DataRow dr = m_dtTemper.NewRow();
             dr["Time"] = "0.0";
             dr["Temper1"] = "20";
             dr["Temper2"] = "20";
+            dr["TemperSTD"] = m_cfg.Setting.Data.STDTemper.ToString();
             m_dtTemper.Rows.Add(dr);
         }
 
@@ -221,6 +226,7 @@ namespace Temperature_Sensor {
             string[] tempers = GetTemper();
             dr["Temper1"] = tempers[0] != OverRange && tempers[0] != UnderRange ? tempers[0] : null;
             dr["Temper2"] = tempers[1] != OverRange && tempers[1] != UnderRange ? tempers[1] : null;
+            dr["TemperSTD"] = m_cfg.Setting.Data.STDTemper.ToString();
             m_dtTemper.Rows.Add(dr);
         }
 
@@ -228,23 +234,54 @@ namespace Temperature_Sensor {
             m_dtTemper.Rows.Clear();
         }
 
-        public void ExportResultFile() {
+        public string GetTimeStamp() {
+            m_strTimeStamp = DateTime.Now.ToLocalTime().ToString("yyyyMMdd-HHmmss");
+            return m_strTimeStamp;
+        }
+
+        private string GetFormatedTimeStamp() {
+            if (m_strTimeStamp.Length < 15) {
+                return "";
+            }
+            string strRet = string.Format("{0}-{1}-{2}", m_strTimeStamp.Substring(0, 4), m_strTimeStamp.Substring(4, 2), m_strTimeStamp.Substring(6, 2));
+            strRet += string.Format("_{0}:{1}:{2}", m_strTimeStamp.Substring(9, 2), m_strTimeStamp.Substring(11, 2), m_strTimeStamp.Substring(13, 2));
+            return strRet;
+        }
+
+        public void ExportResultFile(bool bResult, string strTimeStamp) {
             string ExportPath = ".\\Export\\" + DateTime.Now.ToLocalTime().ToString("yyyy-MM") + "\\" + DateTime.Now.ToLocalTime().ToString("yyyy-MM-dd");
             if (!Directory.Exists(ExportPath)) {
                 Directory.CreateDirectory(ExportPath);
             }
-            ExportPath += "\\" + StrVIN + "_" + DateTime.Now.ToLocalTime().ToString("yyyyMMdd-HHmmss") + ".xlsx";
+            ExportPath += "\\" + StrVIN + "_" + strTimeStamp + ".xlsx";
             using (ExcelPackage package = new ExcelPackage()) {
                 // 添加工作表/worksheet
                 ExcelWorksheet worksheet = package.Workbook.Worksheets.Add("空调温度检测数据");
+                // 检测信息及结果
+                worksheet.Cells[1, 1].Value = "VIN: " + StrVIN;
+                worksheet.Cells[2, 1].Value = "检测时间: " + GetFormatedTimeStamp();
+                worksheet.Cells[3, 1].Value = "检测结果: " + (bResult ? "合格" : "不合格");
+                // 格式化检测信息及结果
+                for (int i = 0; i < 3; i++) {
+                    using (ExcelRange range = worksheet.Cells[i + 1, 1, i + 1, m_dtTemper.Columns.Count]) {
+                        // 合并单元格
+                        range.Merge = true;
+                        // 边框
+                        range.Style.Border.BorderAround(ExcelBorderStyle.Thin, Color.Black);
+                        // 格式化
+                        range.Style.Font.Bold = true;
+                        range.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
+                    }
+                }
                 // 标题
+                int startRow = 4;
                 for (int i = 0; i < m_dtTemper.Columns.Count; i++) {
-                    worksheet.Cells[1, i + 1].Value = m_dtTemper.Columns[i].ColumnName;
+                    worksheet.Cells[startRow, i + 1].Value = m_dtTemper.Columns[i].ColumnName;
                     // 边框
-                    worksheet.Cells[1, i + 1].Style.Border.BorderAround(ExcelBorderStyle.Thin, Color.Black);
+                    worksheet.Cells[startRow, i + 1].Style.Border.BorderAround(ExcelBorderStyle.Thin, Color.Black);
                 }
                 // 格式化标题
-                using (var range = worksheet.Cells[1, 1, 1, m_dtTemper.Columns.Count]) {
+                using (ExcelRange range = worksheet.Cells[startRow, 1, startRow, m_dtTemper.Columns.Count]) {
                     range.Style.Font.Bold = true;
                     range.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
                     range.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
@@ -252,14 +289,14 @@ namespace Temperature_Sensor {
                 // 记录
                 for (int iRow = 0; iRow < m_dtTemper.Rows.Count; iRow++) {
                     for (int iCol = 0; iCol < m_dtTemper.Columns.Count; iCol++) {
-                        worksheet.Cells[iRow + 2, iCol + 1].Value = m_dtTemper.Rows[iRow][iCol].ToString();
+                        worksheet.Cells[startRow + iRow + 1, iCol + 1].Value = m_dtTemper.Rows[iRow][iCol].ToString();
                         // 边框
-                        worksheet.Cells[iRow + 2, iCol + 1].Style.Border.BorderAround(ExcelBorderStyle.Thin, Color.Black);
+                        worksheet.Cells[startRow + iRow + 1, iCol + 1].Style.Border.BorderAround(ExcelBorderStyle.Thin, Color.Black);
                     }
                 }
                 // 格式化记录
                 if (m_dtTemper.Rows.Count > 0) {
-                    using (var range = worksheet.Cells[2, 1, m_dtTemper.Rows.Count + 1, m_dtTemper.Columns.Count]) {
+                    using (ExcelRange range = worksheet.Cells[startRow + 1, 1, startRow + m_dtTemper.Rows.Count, m_dtTemper.Columns.Count]) {
                         range.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
                         range.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
                     }
@@ -270,6 +307,65 @@ namespace Temperature_Sensor {
                 FileInfo xlFile = new FileInfo(ExportPath);
                 package.SaveAs(xlFile);
             }
+        }
+
+        public bool GetResult(double dSTD, out double dAverage1, out double dAverage2) {
+            bool bResult;
+            int counter1 = 0;
+            int counter2 = 0;
+            dAverage1 = 0;
+            dAverage2 = 0;
+            for (int i = 0; i < m_dtTemper.Rows.Count; i++) {
+                bResult = double.TryParse(m_dtTemper.Rows[i]["Temper1"].ToString(), out double iTemper);
+                if (bResult) {
+                    dAverage1 += iTemper;
+                    ++counter1;
+                }
+                bResult = double.TryParse(m_dtTemper.Rows[i]["Temper2"].ToString(), out iTemper);
+                if (bResult) {
+                    dAverage2 += iTemper;
+                    ++counter2;
+                }
+            }
+            dAverage1 /= counter1;
+            dAverage2 /= counter2;
+            if (dSTD >= dAverage1 && dSTD >= dAverage2) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        public void WriteDB(bool bResult, string strTimeStamp) {
+            DataRow dr;
+            string[] columns = m_db.GetTableColumns("TemperData");
+            DataTable dtData = new DataTable("TemperData");
+            foreach (string col in columns) {
+                dtData.Columns.Add(col);
+            }
+            string SN = m_cfg.Setting.Data.TCPServerIP.Split('.')[3] + "-" + strTimeStamp;
+            for (int i = 0; i < m_dtTemper.Rows.Count; i++) {
+                dr = dtData.NewRow();
+                dr["SN"] = SN;
+                dr["VIN"] = StrVIN;
+                dr["Time"] = m_dtTemper.Rows[i]["Time"];
+                dr["Temper1"] = m_dtTemper.Rows[i]["Temper1"];
+                dr["Temper2"] = m_dtTemper.Rows[i]["Temper2"];
+                dtData.Rows.Add(dr);
+            }
+            m_db.InsertRecords(dtData);
+
+            columns = m_db.GetTableColumns("TemperResult");
+            DataTable dtResult = new DataTable("TemperResult");
+            foreach (string col in columns) {
+                dtResult.Columns.Add(col);
+            }
+            dr = dtResult.NewRow();
+            dr["SN"] = SN;
+            dr["VIN"] = StrVIN;
+            dr["Result"] = bResult ? "1" : "0";
+            dtResult.Rows.Add(dr);
+            m_db.InsertRecords(dtResult);
         }
     }
 }
