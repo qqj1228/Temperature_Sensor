@@ -19,10 +19,10 @@ namespace Temperature_Sensor {
     }
 
     public class Config {
-        private readonly LoggerCS.Logger m_log;
+        private readonly BaseLib.Logger m_log;
         public ConfigFile<Setting> Setting { get; set; }
 
-        public Config(LoggerCS.Logger logger) {
+        public Config(BaseLib.Logger logger) {
             m_log = logger;
             Setting = new ConfigFile<Setting>(".\\Configs\\Setting.xml");
         }

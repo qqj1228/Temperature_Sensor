@@ -17,11 +17,11 @@ namespace Temperature_Sensor {
     public partial class Main : Form {
         private static bool m_bTesting;
         private float m_lastHeight;
-        private readonly LoggerCS.Logger m_log;
+        private readonly BaseLib.Logger m_log;
         private readonly Config m_cfg;
-        private readonly Model m_db;
+        private readonly BaseLib.Model m_db;
         private readonly Temper m_tester;
-        private readonly SerialPortCS.SerialPortClass m_sp;
+        private readonly BaseLib.SerialPortClass m_sp;
         private string m_serialRecvBuf;
         private readonly System.Timers.Timer m_timerInterval;
         private readonly System.Timers.Timer m_timerTotal;
@@ -40,7 +40,7 @@ namespace Temperature_Sensor {
             m_lockObj = new object();
             m_counterFailed = 0;
             this.Text = Properties.Resources.MainTitle + " Ver: " + MainFileVersion.AssemblyVersion;
-            m_log = new LoggerCS.Logger(".\\log", LoggerCS.EnumLogLevel.LogLevelAll, true, 100);
+            m_log = new BaseLib.Logger(".\\log", BaseLib.EnumLogLevel.LogLevelAll, true, 100);
             m_log.TraceInfo("==================================================================");
             m_log.TraceInfo("===================== START Ver: " + MainFileVersion.AssemblyVersion + " =====================");
             m_cfg = new Config(m_log);
@@ -49,14 +49,14 @@ namespace Temperature_Sensor {
             } catch (ApplicationException ex) {
                 MessageBox.Show(ex.Message.Split(':')[0] + "配置文件读取出错，将会使用默认配置", "初始化错误", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
-            m_db = new Model(m_cfg, m_log);
+            m_db = new BaseLib.Model("TemperSensor", m_cfg, m_log);
             m_tester = new Temper(m_log, m_cfg, m_db);
             m_tester.TCPClientInit();
             if (!m_tester.GetInitStatus()) {
                 MessageBox.Show("无法连接WiFi串口服务器", "初始化错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             if (m_cfg.Setting.Data.ScannerPort.Length > 0) {
-                m_sp = new SerialPortCS.SerialPortClass(
+                m_sp = new BaseLib.SerialPortClass(
                     m_cfg.Setting.Data.ScannerPort,
                     m_cfg.Setting.Data.ScannerBaud,
                     Parity.None,
@@ -65,7 +65,7 @@ namespace Temperature_Sensor {
                 );
                 try {
                     m_sp.OpenPort();
-                    m_sp.DataReceived += new SerialPortCS.SerialPortClass.SerialPortDataReceiveEventArgs(SerialDataReceived);
+                    m_sp.DataReceived += new BaseLib.SerialPortClass.SerialPortDataReceiveEventArgs(SerialDataReceived);
                 } catch (Exception ex) {
                     m_log.TraceError("Open serial port error: " + ex.Message);
                     MessageBox.Show("打开串口扫码枪出错", "初始化错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -130,8 +130,18 @@ namespace Temperature_Sensor {
             string strTimeStamp = m_tester.GetTimeStamp();
             double dSTD = m_cfg.Setting.Data.STDTemper;
             bool bResult = m_tester.GetResult(dSTD, out double dAverage1, out double dAverage2);
-            m_tester.ExportResultFile(bResult, strTimeStamp);
-            m_tester.WriteDB(bResult, strTimeStamp);
+            try {
+                m_tester.ExportResultFile(bResult, strTimeStamp);
+            } catch (Exception ex) {
+                m_log.TraceError(ex.Message);
+                MessageBox.Show(ex.Message, "ExportResultFile() ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            try {
+                m_tester.WriteDB(bResult, strTimeStamp);
+            } catch (Exception ex) {
+                m_log.TraceError(ex.Message);
+                MessageBox.Show(ex.Message, "WriteDB() ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
             if (bResult) {
                 m_counterFailed = 0;
             } else {
@@ -266,6 +276,12 @@ namespace Temperature_Sensor {
             m_timerInterval.Dispose();
             m_timerTotal.Dispose();
             m_timerTick.Dispose();
+        }
+
+        private void MenuItemStatistics_Click(object sender, EventArgs e) {
+            FormStatistics form = new FormStatistics(m_tester);
+            form.ShowDialog();
+            form.Dispose();
         }
     }
 

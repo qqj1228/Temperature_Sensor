@@ -4,7 +4,7 @@ using System.IO.Ports;
 using System.Linq;
 using System.Text;
 
-namespace SerialPortCS {
+namespace BaseLib {
     public class SerialPortClass {
         readonly SerialPort _serialPort = null;
 

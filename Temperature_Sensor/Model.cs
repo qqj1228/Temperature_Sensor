@@ -6,14 +6,15 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace Temperature_Sensor {
+namespace BaseLib {
     public class Model {
+        private readonly string m_DBName;
+        private readonly Logger m_log;
+        private readonly Temperature_Sensor.Config m_cfg;
         public string StrConn { get; set; }
-        private readonly LoggerCS.Logger m_log;
-        private readonly Config m_cfg;
-        private const string DBName = "TemperSensor";
 
-        public Model(Config cfg, LoggerCS.Logger log) {
+        public Model(string DBName, Temperature_Sensor.Config cfg, Logger log) {
+            m_DBName = DBName;
             m_log = log;
             m_cfg = cfg;
             this.StrConn = "";
@@ -23,7 +24,7 @@ namespace Temperature_Sensor {
         void ReadConfig() {
             StrConn = "user id=" + m_cfg.Setting.Data.DBUser + ";";
             StrConn += "password=" + m_cfg.Setting.Data.DBPwd + ";";
-            StrConn += "database=" + DBName + ";";
+            StrConn += "database=" + m_DBName + ";";
             StrConn += "data source=" + m_cfg.Setting.Data.DBIP + "," + m_cfg.Setting.Data.DBPort;
         }
 
@@ -51,8 +52,8 @@ namespace Temperature_Sensor {
                         }
                     }
                     return columns;
-                } catch (Exception ex) {
-                    m_log.TraceError("==> SQL ERROR: " + ex.Message);
+                } catch (SqlException ex) {
+                    m_log.TraceError("GetTableColumns() ERROR: " + ex.Message);
                 } finally {
                     sqlConn.Close();
                 }
@@ -208,5 +209,10 @@ namespace Temperature_Sensor {
             return iRet;
         }
 
+        public int GetRecordsCount(string strTableName) {
+            string strSQL = "SELECT sum(row_count) as ROW_COUNT FROM sys.dm_db_partition_stats ";
+            strSQL += "WITH (NOLOCK) WHERE index_id < 2 and object_id = OBJECT_ID('" + strTableName + "')";
+            return Convert.ToInt32(QueryOne(strSQL));
+        }
     }
 }

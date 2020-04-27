@@ -15,9 +15,9 @@ namespace Temperature_Sensor {
         private const string OverRange = "+9999"; // RTD模块读数超过上限时返回的字符串
         private const string UnderRange = "-0000"; // RTD模块读数超过下限时返回的字符串
         private const int NormalLength = 7; // RTD模块返回正常读数的字符串长度
-        private readonly LoggerCS.Logger m_log;
+        private readonly BaseLib.Logger m_log;
         private readonly Config m_cfg;
-        private readonly Model m_db;
+        private readonly BaseLib.Model m_db;
         private readonly DataTable m_dtTemper;
         private readonly int m_bufSize;
         private readonly byte[] m_recvBuf;
@@ -29,7 +29,7 @@ namespace Temperature_Sensor {
 
         public string StrVIN { get; set; }
 
-        public Temper(LoggerCS.Logger logger, Config config, Model db) {
+        public Temper(BaseLib.Logger logger, Config config, BaseLib.Model db) {
             m_log = logger;
             m_cfg = config;
             m_db = db;
@@ -80,6 +80,18 @@ namespace Temperature_Sensor {
 
         public DataTable GetDtTemper() {
             return m_dtTemper;
+        }
+
+        public BaseLib.Logger GetLogger() {
+            return m_log;
+        }
+
+        public Config GetConfig() {
+            return m_cfg;
+        }
+
+        public BaseLib.Model GetModel() {
+            return m_db;
         }
 
         private void ChartInit() {

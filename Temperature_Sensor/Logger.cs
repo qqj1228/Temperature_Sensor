@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace LoggerCS {
+namespace BaseLib {
     public enum EnumLogLevel {
         LogLevelAll,    //所有信息都写日志
         LogLevelMid,    //写错误、警告信息

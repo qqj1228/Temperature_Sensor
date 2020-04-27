@@ -23,6 +23,7 @@
         /// 使用代码编辑器修改此方法的内容。
         /// </summary>
         private void InitializeComponent() {
+            this.components = new System.ComponentModel.Container();
             System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
             System.Windows.Forms.DataVisualization.Charting.Legend legend1 = new System.Windows.Forms.DataVisualization.Charting.Legend();
             System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
@@ -39,12 +40,15 @@
             this.tblLayoutStatus = new System.Windows.Forms.TableLayoutPanel();
             this.lblStatus1 = new System.Windows.Forms.Label();
             this.lblStatus2 = new System.Windows.Forms.Label();
+            this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.MenuItemStatistics = new System.Windows.Forms.ToolStripMenuItem();
             this.tblLayoutMain.SuspendLayout();
             this.tblLayoutTop.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.chart1)).BeginInit();
             this.tblLayoutLogo.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.tblLayoutStatus.SuspendLayout();
+            this.contextMenuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
             // tblLayoutMain
@@ -114,7 +118,6 @@
             legend1.Alignment = System.Drawing.StringAlignment.Far;
             legend1.BackColor = System.Drawing.SystemColors.Control;
             legend1.DockedToChartArea = "ChartArea1";
-            legend1.Docking = System.Windows.Forms.DataVisualization.Charting.Docking.Left;
             legend1.Name = "Legend1";
             this.chart1.Legends.Add(legend1);
             this.chart1.Location = new System.Drawing.Point(3, 165);
@@ -222,11 +225,26 @@
             this.lblStatus2.Text = "连接异常";
             this.lblStatus2.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
+            // contextMenuStrip1
+            // 
+            this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.MenuItemStatistics});
+            this.contextMenuStrip1.Name = "contextMenuStrip1";
+            this.contextMenuStrip1.Size = new System.Drawing.Size(149, 26);
+            // 
+            // MenuItemStatistics
+            // 
+            this.MenuItemStatistics.Name = "MenuItemStatistics";
+            this.MenuItemStatistics.Size = new System.Drawing.Size(148, 22);
+            this.MenuItemStatistics.Text = "统计信息...(&S)";
+            this.MenuItemStatistics.Click += new System.EventHandler(this.MenuItemStatistics_Click);
+            // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(784, 561);
+            this.ContextMenuStrip = this.contextMenuStrip1;
             this.Controls.Add(this.tblLayoutMain);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Main";
@@ -243,6 +261,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.tblLayoutStatus.ResumeLayout(false);
             this.tblLayoutStatus.PerformLayout();
+            this.contextMenuStrip1.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -261,6 +280,8 @@
         private System.Windows.Forms.TableLayoutPanel tblLayoutStatus;
         private System.Windows.Forms.Label lblStatus1;
         private System.Windows.Forms.Label lblStatus2;
+        private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
+        private System.Windows.Forms.ToolStripMenuItem MenuItemStatistics;
     }
 }
 
