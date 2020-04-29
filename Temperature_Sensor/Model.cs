@@ -54,11 +54,13 @@ namespace BaseLib {
                     return columns;
                 } catch (SqlException ex) {
                     m_log.TraceError("GetTableColumns() ERROR: " + ex.Message);
+                    throw new ApplicationException(ex.Message);
                 } finally {
-                    sqlConn.Close();
+                    if (sqlConn.State != ConnectionState.Closed) {
+                        sqlConn.Close();
+                    }
                 }
             }
-            return new string[] { };
         }
 
         public Dictionary<string, int> GetTableColumnsDic(string strTable) {
@@ -75,7 +77,7 @@ namespace BaseLib {
         /// </summary>
         /// <param name="strSQL"></param>
         /// <returns></returns>
-        int ExecuteNonQuery(string strSQL) {
+        public int ExecuteNonQuery(string strSQL) {
             int count = -1;
             if (strSQL.Length == 0) {
                 return -1;
@@ -89,7 +91,7 @@ namespace BaseLib {
                     } catch (SqlException ex) {
                         m_log.TraceInfo("Error SQL: " + strSQL);
                         m_log.TraceError(ex.Message);
-                        throw new Exception(ex.Message);
+                        throw new ApplicationException(ex.Message);
                     } finally {
                         if (sqlConn.State != ConnectionState.Closed) {
                             sqlConn.Close();
@@ -105,7 +107,7 @@ namespace BaseLib {
         /// </summary>
         /// <param name="strSQL"></param>
         /// <param name="dt"></param>
-        private void Query(string strSQL, DataTable dt) {
+        public void Query(string strSQL, DataTable dt) {
             using (SqlConnection sqlConn = new SqlConnection(StrConn)) {
                 try {
                     SqlDataAdapter adapter = new SqlDataAdapter(strSQL, sqlConn);
@@ -114,7 +116,7 @@ namespace BaseLib {
                 } catch (SqlException ex) {
                     m_log.TraceError("Error SQL: " + strSQL);
                     m_log.TraceError(ex.Message);
-                    throw new Exception(ex.Message);
+                    throw new ApplicationException(ex.Message);
                 } finally {
                     if (sqlConn.State != ConnectionState.Closed) {
                         sqlConn.Close();
@@ -129,7 +131,7 @@ namespace BaseLib {
         /// </summary>
         /// <param name="strSQL"></param>
         /// <returns></returns>
-        private object QueryOne(string strSQL) {
+        public object QueryOne(string strSQL) {
             using (SqlConnection sqlConn = new SqlConnection(StrConn)) {
                 using (SqlCommand cmd = new SqlCommand(strSQL, sqlConn)) {
                     try {
@@ -143,7 +145,7 @@ namespace BaseLib {
                     } catch (SqlException ex) {
                         m_log.TraceError("Error SQL: " + strSQL);
                         m_log.TraceError(ex.Message);
-                        throw new Exception(ex.Message);
+                        throw new ApplicationException(ex.Message);
                     } finally {
                         if (sqlConn.State != ConnectionState.Closed) {
                             sqlConn.Close();
@@ -214,5 +216,6 @@ namespace BaseLib {
             strSQL += "WITH (NOLOCK) WHERE index_id < 2 and object_id = OBJECT_ID('" + strTableName + "')";
             return Convert.ToInt32(QueryOne(strSQL));
         }
+
     }
 }

@@ -138,6 +138,8 @@ namespace Temperature_Sensor {
             }
             try {
                 m_tester.WriteDB(bResult, strTimeStamp);
+            } catch (ApplicationException ex) {
+                MessageBox.Show(ex.Message, "WriteDB() ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
             } catch (Exception ex) {
                 m_log.TraceError(ex.Message);
                 MessageBox.Show(ex.Message, "WriteDB() ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);

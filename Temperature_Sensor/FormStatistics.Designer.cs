@@ -23,6 +23,8 @@
         /// the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent() {
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormStatistics));
             this.grpBoxTime = new System.Windows.Forms.GroupBox();
             this.cmbBoxTime = new System.Windows.Forms.ComboBox();
@@ -36,7 +38,7 @@
             this.lblQTY = new System.Windows.Forms.Label();
             this.grpBoxRate = new System.Windows.Forms.GroupBox();
             this.lblRate = new System.Windows.Forms.Label();
-            this.dataGridView1 = new System.Windows.Forms.DataGridView();
+            this.dataGVResult = new System.Windows.Forms.DataGridView();
             this.tblLayoutMain = new System.Windows.Forms.TableLayoutPanel();
             this.tblLayoutTop = new System.Windows.Forms.TableLayoutPanel();
             this.grpBoxPage = new System.Windows.Forms.GroupBox();
@@ -49,7 +51,7 @@
             this.grpBoxResult.SuspendLayout();
             this.grpBoxQTY.SuspendLayout();
             this.grpBoxRate.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dataGVResult)).BeginInit();
             this.tblLayoutMain.SuspendLayout();
             this.tblLayoutTop.SuspendLayout();
             this.grpBoxPage.SuspendLayout();
@@ -70,11 +72,13 @@
             // cmbBoxTime
             // 
             this.cmbBoxTime.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.cmbBoxTime.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbBoxTime.FormattingEnabled = true;
             this.cmbBoxTime.Location = new System.Drawing.Point(3, 17);
             this.cmbBoxTime.Name = "cmbBoxTime";
             this.cmbBoxTime.Size = new System.Drawing.Size(77, 20);
             this.cmbBoxTime.TabIndex = 0;
+            this.cmbBoxTime.SelectedIndexChanged += new System.EventHandler(this.SelectedIndexOrValueChanged);
             // 
             // grpBoxStation
             // 
@@ -85,7 +89,7 @@
             this.grpBoxStation.Size = new System.Drawing.Size(83, 38);
             this.grpBoxStation.TabIndex = 1;
             this.grpBoxStation.TabStop = false;
-            this.grpBoxStation.Text = "测温站编号";
+            this.grpBoxStation.Text = "测温站ID";
             // 
             // txtBoxStation
             // 
@@ -94,6 +98,7 @@
             this.txtBoxStation.Name = "txtBoxStation";
             this.txtBoxStation.Size = new System.Drawing.Size(77, 21);
             this.txtBoxStation.TabIndex = 1;
+            this.txtBoxStation.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.TxtBox_KeyPress);
             // 
             // grpBoxVIN
             // 
@@ -104,7 +109,7 @@
             this.grpBoxVIN.Size = new System.Drawing.Size(143, 38);
             this.grpBoxVIN.TabIndex = 2;
             this.grpBoxVIN.TabStop = false;
-            this.grpBoxVIN.Text = "车辆VIN号";
+            this.grpBoxVIN.Text = "筛选车辆VIN号";
             // 
             // txtBoxVIN
             // 
@@ -114,6 +119,7 @@
             this.txtBoxVIN.Size = new System.Drawing.Size(137, 21);
             this.txtBoxVIN.TabIndex = 0;
             this.txtBoxVIN.Text = "12345678901234567";
+            this.txtBoxVIN.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.TxtBox_KeyPress);
             // 
             // grpBoxResult
             // 
@@ -124,16 +130,18 @@
             this.grpBoxResult.Size = new System.Drawing.Size(83, 38);
             this.grpBoxResult.TabIndex = 3;
             this.grpBoxResult.TabStop = false;
-            this.grpBoxResult.Text = "测温结果";
+            this.grpBoxResult.Text = "筛选结果";
             // 
             // cmbBoxResult
             // 
             this.cmbBoxResult.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.cmbBoxResult.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbBoxResult.FormattingEnabled = true;
             this.cmbBoxResult.Location = new System.Drawing.Point(3, 17);
             this.cmbBoxResult.Name = "cmbBoxResult";
             this.cmbBoxResult.Size = new System.Drawing.Size(77, 20);
             this.cmbBoxResult.TabIndex = 1;
+            this.cmbBoxResult.SelectedIndexChanged += new System.EventHandler(this.SelectedIndexOrValueChanged);
             // 
             // grpBoxQTY
             // 
@@ -144,7 +152,7 @@
             this.grpBoxQTY.Size = new System.Drawing.Size(101, 38);
             this.grpBoxQTY.TabIndex = 4;
             this.grpBoxQTY.TabStop = false;
-            this.grpBoxQTY.Text = "已检数量";
+            this.grpBoxQTY.Text = "已检车次";
             // 
             // lblQTY
             // 
@@ -177,31 +185,49 @@
             this.lblRate.Text = "100%";
             this.lblRate.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // dataGridView1
+            // dataGVResult
             // 
-            this.dataGridView1.AllowUserToAddRows = false;
-            this.dataGridView1.AllowUserToDeleteRows = false;
-            this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dataGridView1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.dataGridView1.Location = new System.Drawing.Point(3, 53);
-            this.dataGridView1.Name = "dataGridView1";
-            this.dataGridView1.ReadOnly = true;
-            this.dataGridView1.RowTemplate.Height = 23;
-            this.dataGridView1.Size = new System.Drawing.Size(778, 505);
-            this.dataGridView1.TabIndex = 6;
+            this.dataGVResult.AllowUserToAddRows = false;
+            this.dataGVResult.AllowUserToDeleteRows = false;
+            this.dataGVResult.AllowUserToResizeRows = false;
+            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle1.BackColor = System.Drawing.SystemColors.Control;
+            dataGridViewCellStyle1.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            dataGridViewCellStyle1.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.dataGVResult.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
+            this.dataGVResult.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle2.BackColor = System.Drawing.SystemColors.Window;
+            dataGridViewCellStyle2.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            dataGridViewCellStyle2.ForeColor = System.Drawing.SystemColors.ControlText;
+            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+            this.dataGVResult.DefaultCellStyle = dataGridViewCellStyle2;
+            this.dataGVResult.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.dataGVResult.Location = new System.Drawing.Point(3, 53);
+            this.dataGVResult.Name = "dataGVResult";
+            this.dataGVResult.ReadOnly = true;
+            this.dataGVResult.RowHeadersVisible = false;
+            this.dataGVResult.RowTemplate.Height = 23;
+            this.dataGVResult.Size = new System.Drawing.Size(778, 505);
+            this.dataGVResult.TabIndex = 6;
             // 
             // tblLayoutMain
             // 
             this.tblLayoutMain.ColumnCount = 1;
             this.tblLayoutMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tblLayoutMain.Controls.Add(this.dataGridView1, 0, 1);
+            this.tblLayoutMain.Controls.Add(this.dataGVResult, 0, 1);
             this.tblLayoutMain.Controls.Add(this.tblLayoutTop, 0, 0);
             this.tblLayoutMain.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tblLayoutMain.Location = new System.Drawing.Point(0, 0);
             this.tblLayoutMain.Name = "tblLayoutMain";
             this.tblLayoutMain.RowCount = 2;
             this.tblLayoutMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 50F));
-            this.tblLayoutMain.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tblLayoutMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tblLayoutMain.Size = new System.Drawing.Size(784, 561);
             this.tblLayoutMain.TabIndex = 7;
             // 
@@ -278,6 +304,7 @@
             0,
             0,
             0});
+            this.numUDPage.ValueChanged += new System.EventHandler(this.SelectedIndexOrValueChanged);
             // 
             // FormStatistics
             // 
@@ -297,7 +324,7 @@
             this.grpBoxResult.ResumeLayout(false);
             this.grpBoxQTY.ResumeLayout(false);
             this.grpBoxRate.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dataGVResult)).EndInit();
             this.tblLayoutMain.ResumeLayout(false);
             this.tblLayoutTop.ResumeLayout(false);
             this.grpBoxPage.ResumeLayout(false);
@@ -319,7 +346,7 @@
         private System.Windows.Forms.ComboBox cmbBoxResult;
         private System.Windows.Forms.GroupBox grpBoxQTY;
         private System.Windows.Forms.GroupBox grpBoxRate;
-        private System.Windows.Forms.DataGridView dataGridView1;
+        private System.Windows.Forms.DataGridView dataGVResult;
         private System.Windows.Forms.TableLayoutPanel tblLayoutMain;
         private System.Windows.Forms.TableLayoutPanel tblLayoutTop;
         private System.Windows.Forms.GroupBox grpBoxPage;
