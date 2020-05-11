@@ -24,6 +24,11 @@ namespace Temperature_Sensor {
             m_cfg = m_tester.GetConfig();
             m_db = m_tester.GetModel();
             m_dtShow = new DataTable("Show");
+            m_dtShow.Columns.Add("测温站ID");
+            m_dtShow.Columns.Add("检测日期");
+            m_dtShow.Columns.Add("检测时间");
+            m_dtShow.Columns.Add("车辆VIN号");
+            m_dtShow.Columns.Add("检测结果");
         }
 
         private void SetGridViewColumnsSortMode(DataGridView gridView, DataGridViewColumnSortMode sortMode) {
@@ -33,6 +38,7 @@ namespace Temperature_Sensor {
         }
 
         private void FormStatistics_Load(object sender, EventArgs e) {
+            this.txtBoxVIN.Clear(); // 首先清VIN号筛选框，否则下面下拉框增加选项的时候会发生旧VIN号筛选
             this.cmbBoxTime.Items.Add("当天内");
             this.cmbBoxTime.Items.Add("本月内");
             this.cmbBoxTime.Items.Add("今年内");
@@ -42,12 +48,6 @@ namespace Temperature_Sensor {
             this.cmbBoxResult.Items.Add("不合格");
             this.cmbBoxResult.SelectedIndex = 0;
             this.txtBoxStation.Text = m_cfg.Setting.Data.TCPServerIP.Split('.')[3];
-            this.txtBoxVIN.Clear();
-            m_dtShow.Columns.Add("测温站ID");
-            m_dtShow.Columns.Add("检测日期");
-            m_dtShow.Columns.Add("检测时间");
-            m_dtShow.Columns.Add("车辆VIN号");
-            m_dtShow.Columns.Add("检测结果");
             this.dataGVResult.DataSource = m_dtShow;
             this.dataGVResult.Columns["车辆VIN号"].Width = 2 * this.dataGVResult.Columns["测温站ID"].Width;
             SetGridViewColumnsSortMode(this.dataGVResult, DataGridViewColumnSortMode.NotSortable);

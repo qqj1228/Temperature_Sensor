@@ -103,7 +103,7 @@ namespace Temperature_Sensor {
             dr["Time"] = "0.0";
             dr["Temper1"] = "20";
             dr["Temper2"] = "20";
-            dr["TemperSTD"] = m_cfg.Setting.Data.STDTemper.ToString();
+            dr["TemperSTD"] = "20";
             m_dtTemper.Rows.Add(dr);
         }
 
@@ -228,7 +228,7 @@ namespace Temperature_Sensor {
             return bRet;
         }
 
-        public void GetData(DateTime start) {
+        public string[] GetData(DateTime start, string strSetup) {
             DataRow dr = m_dtTemper.NewRow();
             TimeSpan interval = DateTime.Now - start;
             if (interval.TotalSeconds < 0.001) {
@@ -238,8 +238,9 @@ namespace Temperature_Sensor {
             string[] tempers = GetTemper();
             dr["Temper1"] = tempers[0] != OverRange && tempers[0] != UnderRange ? tempers[0] : null;
             dr["Temper2"] = tempers[1] != OverRange && tempers[1] != UnderRange ? tempers[1] : null;
-            dr["TemperSTD"] = m_cfg.Setting.Data.STDTemper.ToString();
+            dr["TemperSTD"] = strSetup;
             m_dtTemper.Rows.Add(dr);
+            return tempers;
         }
 
         public void ClearPoints() {
@@ -321,7 +322,7 @@ namespace Temperature_Sensor {
             }
         }
 
-        public bool GetResult(double dSTD, out double dAverage1, out double dAverage2) {
+        public bool GetResult1(double dSTD, out double dAverage1, out double dAverage2) {
             bool bResult;
             int counter1 = 0;
             int counter2 = 0;
@@ -341,11 +342,132 @@ namespace Temperature_Sensor {
             }
             dAverage1 /= counter1;
             dAverage2 /= counter2;
-            if (dSTD >= dAverage1 && dSTD >= dAverage2) {
-                return true;
+            bool bRet = false;
+            if (m_cfg.Setting.Data.Cooling) {
+                switch (m_cfg.Setting.Data.Temper) {
+                case 0:
+                    if (dSTD >= dAverage1 && dSTD >= dAverage2) {
+                        bRet = true;
+                    }
+                    break;
+                case 1:
+                    if (dSTD >= dAverage1) {
+                        bRet = true;
+                    }
+                    break;
+                case 2:
+                    if (dSTD >= dAverage2) {
+                        bRet = true;
+                    }
+                    break;
+                }
             } else {
-                return false;
+                switch (m_cfg.Setting.Data.Temper) {
+                case 0:
+                    if (dSTD <= dAverage1 && dSTD <= dAverage2) {
+                        bRet = true;
+                    }
+                    break;
+                case 1:
+                    if (dSTD <= dAverage1) {
+                        bRet = true;
+                    }
+                    break;
+                case 2:
+                    if (dSTD <= dAverage2) {
+                        bRet = true;
+                    }
+                    break;
+                }
             }
+            return bRet;
+        }
+
+        public bool GetResult2(double dSTD, out double dCount1, out double dCount2) {
+            bool bRet = false;
+            bool bResult;
+            dCount1 = 0;
+            dCount2 = 0;
+            List<double> counts1 = new List<double>();
+            List<double> counts2 = new List<double>();
+            for (int i = 0; i < m_dtTemper.Rows.Count; i++) {
+                bResult = double.TryParse(m_dtTemper.Rows[i]["Temper1"].ToString(), out double iTemper);
+                if (m_cfg.Setting.Data.Cooling) {
+                    if (bResult && dSTD >= iTemper) {
+                        ++dCount1;
+                    } else {
+                        counts1.Add(dCount1);
+                        dCount1 = 0;
+                    }
+                } else {
+                    if (bResult && dSTD <= iTemper) {
+                        ++dCount1;
+                    } else {
+                        counts1.Add(dCount1);
+                        dCount1 = 0;
+                    }
+                }
+                bResult = double.TryParse(m_dtTemper.Rows[i]["Temper2"].ToString(), out iTemper);
+                if (m_cfg.Setting.Data.Cooling) {
+                    if (bResult && dSTD >= iTemper) {
+                        ++dCount2;
+                    } else {
+                        counts2.Add(dCount2);
+                        dCount2 = 0;
+                    }
+                } else {
+                    if (bResult && dSTD <= iTemper) {
+                        ++dCount2;
+                    } else {
+                        counts2.Add(dCount2);
+                        dCount2 = 0;
+                    }
+                }
+            }
+            dCount1 = Math.Max(counts1.Max(), dCount1);
+            dCount2 = Math.Max(counts2.Max(), dCount2);
+            if (m_cfg.Setting.Data.SuccessiveValue > 1) {
+                // 绝对值
+                switch (m_cfg.Setting.Data.Temper) {
+                case 0:
+                    if (m_cfg.Setting.Data.SuccessiveValue <= dCount1 && m_cfg.Setting.Data.SuccessiveValue <= dCount2) {
+                        bRet = true;
+                    }
+                    break;
+                case 1:
+                    if (m_cfg.Setting.Data.SuccessiveValue <= dCount1) {
+                        bRet = true;
+                    }
+                    break;
+                case 2:
+                    if (m_cfg.Setting.Data.SuccessiveValue <= dCount2) {
+                        bRet = true;
+                    }
+                    break;
+                }
+            } else {
+                // 比率
+                dCount1 /= m_dtTemper.Rows.Count;
+                dCount2 /= m_dtTemper.Rows.Count;
+                switch (m_cfg.Setting.Data.Temper) {
+                case 0:
+                    if (m_cfg.Setting.Data.SuccessiveValue <= dCount1 && m_cfg.Setting.Data.SuccessiveValue <= dCount2) {
+                        bRet = true;
+                    }
+                    break;
+                case 1:
+                    if (m_cfg.Setting.Data.SuccessiveValue <= dCount1) {
+                        bRet = true;
+                    }
+                    break;
+                case 2:
+                    if (m_cfg.Setting.Data.SuccessiveValue <= dCount2) {
+                        bRet = true;
+                    }
+                    break;
+                }
+            }
+            return bRet;
         }
 
         public void WriteDB(bool bResult, string strTimeStamp) {
@@ -363,6 +485,7 @@ namespace Temperature_Sensor {
                 dr["Time"] = m_dtTemper.Rows[i]["Time"];
                 dr["Temper1"] = m_dtTemper.Rows[i]["Temper1"];
                 dr["Temper2"] = m_dtTemper.Rows[i]["Temper2"];
+                dr["TemperSTD"] = m_dtTemper.Rows[i]["TemperSTD"];
                 dtData.Rows.Add(dr);
             }
             m_db.InsertRecords(dtData);

@@ -18,6 +18,7 @@ CREATE TABLE TemperSensor.dbo.TemperData(
     Time float NOT NULL, -- 检测时间，单位：秒
     Temper1 float, -- 探头1温度值，单位：℃
     Temper2 float, -- 探头2温度值，单位：℃
+    TemperSTD float, -- 温度设定值，单位：℃
 )
 GO
 

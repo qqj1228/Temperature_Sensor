@@ -20,6 +20,14 @@
   <DBPort>sa</DBPort>
   <!-- 数据库密码 -->
   <DBPort>sh49</DBPort>
-  <!-- 设定温度值，单位℃，低于此温度判为不合格 -->
-  <STDTemper>10</STDTemper>
+  <!-- 温度设定值，用于计算设定温度，小于1为比率，大于1为绝对值 -->
+  <SetupValue>0.25</SetupValue>
+  <!-- 空调工作模式 -->
+  <Cooling>true</Cooling>
+  <!-- 用哪个温度点作为评判标准，0：全部，1：温度点1，2：温度点2 -->
+  <Temper>0</Temper>
+  <!-- 是否合格的评判标准，1：平均值，2：连续点 -->
+  <Rule>1</Rule>
+  <!-- 连续点设定值，小于1为比率，大于1为绝对值 -->
+  <SuccessiveValue>0.5</SuccessiveValue>
 </Setting>

@@ -27,6 +27,7 @@ namespace Temperature_Sensor {
         private readonly System.Timers.Timer m_timerTotal;
         readonly System.Timers.Timer m_timerTick;
         private DateTime m_start;
+        private double m_dSetup;
         private bool m_bLastStatus;
         private static object m_lockObj;
         private int m_counterFailed;
@@ -111,25 +112,70 @@ namespace Temperature_Sensor {
             }
         }
 
+        private CancellationTokenSource UpdateUITask(string strMsg, int msDelay) {
+            CancellationTokenSource tokenSource = new CancellationTokenSource(msDelay);
+            CancellationToken token = tokenSource.Token;
+            Task.Factory.StartNew(() => {
+                int total = msDelay / 1000;
+                int count = 0;
+                while (!token.IsCancellationRequested) {
+                    try {
+                        this.Invoke((EventHandler)delegate {
+                            this.lblInfo.ForeColor = Color.Black;
+                            if (count == 0) {
+                                this.lblInfo.Text = strMsg + "。。。";
+                            } else {
+                                this.lblInfo.Text = strMsg + "，剩余" + (total - count).ToString() + "秒";
+                            }
+                        });
+                    } catch (ObjectDisposedException ex) {
+                        m_log.TraceWarning(ex.Message);
+                    }
+                    Thread.Sleep(1000);
+                    if (total > count) {
+                        ++count;
+                    }
+                }
+            }, token);
+            return tokenSource;
+        }
+
         private void ResizeFont(Control control, float scale) {
             control.Font = new Font(control.Font.FontFamily, control.Font.Size * scale, control.Font.Style);
         }
 
         private void OnTimeInterval(object source, System.Timers.ElapsedEventArgs e) {
             m_timerTick.Enabled = false;
-            m_tester.GetData(m_start);
-            this.Invoke((EventHandler)delegate {
-                this.chart1.DataBind();
-            });
+            string[] tempers = m_tester.GetData(m_start, m_dSetup.ToString());
+            try {
+                this.Invoke((EventHandler)delegate {
+                    this.chart1.DataBind();
+                    this.lblTemper1.Text = GetDisplay(tempers[0]) + "℃";
+                    this.lblTemper2.Text = GetDisplay(tempers[1]) + "℃";
+                });
+            } catch (ObjectDisposedException ex) {
+                m_log.TraceWarning(ex.Message);
+            }
         }
 
         private void OnTimeTotal(object source, System.Timers.ElapsedEventArgs e) {
             m_timerInterval.Enabled = false;
             m_timerTotal.Enabled = false;
             m_timerTick.Enabled = true;
+            bool bResult = false;
+            double dAverage1 = 0;
+            double dAverage2 = 0;
+            double dCount1 = 0;
+            double dCount2 = 0;
+            switch (m_cfg.Setting.Data.Rule) {
+            case 1:
+                bResult = m_tester.GetResult1(m_dSetup, out dAverage1, out dAverage2);
+                break;
+            case 2:
+                bResult = m_tester.GetResult2(m_dSetup, out dCount1, out dCount2);
+                break;
+            }
             string strTimeStamp = m_tester.GetTimeStamp();
-            double dSTD = m_cfg.Setting.Data.STDTemper;
-            bool bResult = m_tester.GetResult(dSTD, out double dAverage1, out double dAverage2);
             try {
                 m_tester.ExportResultFile(bResult, strTimeStamp);
             } catch (Exception ex) {
@@ -157,9 +203,54 @@ namespace Temperature_Sensor {
                     this.lblInfo.ForeColor = Color.Red;
                     this.lblInfo.Text = "不合格";
                 }
-                this.lblInfo.Text += ", 设定温度: " + dSTD.ToString("F1") + "℃, 平均温度: " + dAverage1.ToString("F1") + "℃/" + dAverage2.ToString("F1") + "℃";
+                switch (m_cfg.Setting.Data.Rule) {
+                case 1:
+                    this.lblInfo.Text += ", 平均温度: ";
+                    switch (m_cfg.Setting.Data.Temper) {
+                    case 0:
+                        this.lblInfo.Text += dAverage1.ToString("F2") + "℃/" + dAverage2.ToString("F2") + "℃";
+                        break;
+                    case 1:
+                        this.lblInfo.Text += dAverage1.ToString("F2") + "℃";
+                        break;
+                    case 2:
+                        this.lblInfo.Text += dAverage2.ToString("F2") + "℃";
+                        break;
+                    }
+                    break;
+                case 2:
+                    this.lblInfo.Text += ", 连续合格温度点";
+                    if (m_cfg.Setting.Data.SuccessiveValue > 1) {
+                        // 绝对值
+                        switch (m_cfg.Setting.Data.Temper) {
+                        case 0:
+                            this.lblInfo.Text += "个数: " + dCount1.ToString("F0") + "个/" + dCount2.ToString("F0") + "个";
+                            break;
+                        case 1:
+                            this.lblInfo.Text += dCount1.ToString("F0") + "个";
+                            break;
+                        case 2:
+                            this.lblInfo.Text += dCount2.ToString("F0") + "个";
+                            break;
+                        }
+                    } else {
+                        // 比率
+                        switch (m_cfg.Setting.Data.Temper) {
+                        case 0:
+                            this.lblInfo.Text += "占比: " + (dCount1 * 100).ToString("F2") + "%/" + (dCount2 * 100).ToString("F2") + "%";
+                            break;
+                        case 1:
+                            this.lblInfo.Text += (dCount1 * 100).ToString("F2") + "%";
+                            break;
+                        case 2:
+                            this.lblInfo.Text += (dCount2 * 100).ToString("F2") + "%";
+                            break;
+                        }
+                    }
+                    break;
+                }
                 if (m_counterFailed >= m_cfg.Setting.Data.TestFailedQty) {
-                    this.lblInfo.Text += ", 已连续" + m_cfg.Setting.Data.TestFailedQty.ToString() + "辆车不合格";
+                    this.lblInfo.Text += ", 已连续" + m_counterFailed.ToString() + "辆车不合格";
                     this.lblInfo.BackColor = Color.Red;
                     this.lblInfo.ForeColor = Color.White;
                 }
@@ -193,19 +284,67 @@ namespace Temperature_Sensor {
             m_log.TraceInfo(">>>>> Get VIN: " + m_tester.StrVIN + ", Ver: " + MainFileVersion.AssemblyVersion + " <<<<<");
             m_serialRecvBuf = "";
             this.Invoke((EventHandler)delegate {
+                this.lblSurrounding.Text = "--℃";
+                this.lblSetup.Text = "--℃";
+                this.lblTemper1.Text = "--℃";
+                this.lblTemper2.Text = "--℃";
                 this.lblInfo.BackColor = this.lblLogo.BackColor;
                 this.lblInfo.ForeColor = this.lblLogo.ForeColor;
-                this.lblInfo.Text = "开始检测。。。";
+                this.lblInfo.Text = "获取环境温度";
             });
-            m_tester.ClearPoints();
-            m_timerInterval.Enabled = true;
-            m_timerTotal.Enabled = true;
-            m_timerTick.Enabled = false;
-            m_start = DateTime.Now;
-            m_tester.GetData(m_start);
-            this.Invoke((EventHandler)delegate {
-                this.chart1.DataBind();
-            });
+            // 获取环境温度
+            string surrounding = GetDisplay(m_tester.GetTemper()[0]);
+            if (double.TryParse(surrounding, out double value)) {
+                if (m_cfg.Setting.Data.SetupValue > 1) {
+                    // 绝对值
+                    if (m_cfg.Setting.Data.Cooling) {
+                        m_dSetup = value - m_cfg.Setting.Data.SetupValue;
+                    } else {
+                        m_dSetup = value + m_cfg.Setting.Data.SetupValue;
+                    }
+                } else {
+                    // 比率
+                    if (m_cfg.Setting.Data.Cooling) {
+                        m_dSetup = value * (1 - m_cfg.Setting.Data.SetupValue);
+                    } else {
+                        m_dSetup = value * (1 + m_cfg.Setting.Data.SetupValue);
+                    }
+                }
+                // 等待开启空调
+                this.Invoke((EventHandler)delegate {
+                    this.lblInfo.BackColor = this.lblLogo.BackColor;
+                    this.lblInfo.ForeColor = this.lblLogo.ForeColor;
+                    this.lblInfo.Text = "启动车辆，打开空调，开至最大";
+                });
+                if (m_cfg.Setting.Data.UsingRPM) {
+                    while (m_cfg.Setting.Data.IdleRPMMin > GetRPM()) {
+                        Thread.Sleep(m_cfg.Setting.Data.Interval);
+                    }
+                }
+                // 开始检测
+                m_tester.ClearPoints();
+                m_timerInterval.Enabled = true;
+                m_timerTotal.Enabled = true;
+                m_timerTick.Enabled = false;
+                m_start = DateTime.Now;
+                string[] tempers = m_tester.GetData(m_start, m_dSetup.ToString());
+                this.Invoke((EventHandler)delegate {
+                    this.lblSurrounding.Text = surrounding + "℃";
+                    this.lblSetup.Text = m_dSetup.ToString("F2") + "℃";
+                    this.lblTemper1.Text = GetDisplay(tempers[0]) + "℃";
+                    this.lblTemper2.Text = GetDisplay(tempers[1]) + "℃";
+                    this.lblInfo.BackColor = this.lblLogo.BackColor;
+                    this.lblInfo.ForeColor = this.lblLogo.ForeColor;
+                    UpdateUITask("正在检测", m_cfg.Setting.Data.TotalTime);
+                    this.chart1.DataBind();
+                });
+            } else {
+                this.Invoke((EventHandler)delegate {
+                    this.lblInfo.BackColor = this.lblLogo.BackColor;
+                    this.lblInfo.ForeColor = Color.Red;
+                    this.lblInfo.Text = "获取环境温度失败";
+                });
+            }
         }
 
         private void Main_Resize(object sender, EventArgs e) {
@@ -219,6 +358,18 @@ namespace Temperature_Sensor {
             ResizeFont(this.lblInfo, scale);
             ResizeFont(this.lblStatus1, scale);
             ResizeFont(this.lblStatus2, scale);
+            ResizeFont(this.grpBoxSurrounding, scale);
+            ResizeFont(this.lblSurrounding, scale);
+            ResizeFont(this.grpBoxSetup, scale);
+            ResizeFont(this.lblSetup, scale);
+            ResizeFont(this.grpBoxTemper1, scale);
+            ResizeFont(this.lblTemper1, scale);
+            ResizeFont(this.grpBoxTemper2, scale);
+            ResizeFont(this.lblTemper2, scale);
+            ResizeFont(this.grpBoxMode, scale);
+            ResizeFont(this.lblMode, scale);
+            ResizeFont(this.grpBoxRPM, scale);
+            ResizeFont(this.lblRPM, scale);
             m_lastHeight = this.Height;
         }
 
@@ -238,6 +389,22 @@ namespace Temperature_Sensor {
                     this.txtBoxVIN.SelectAll();
                 }
             }
+        }
+
+        private string GetDisplay(string strValue) {
+            bool bMinus = strValue.StartsWith("-") ? true : false;
+            string strRet = strValue.Replace("+", "").Replace("-", "").Trim('0');
+            strRet = bMinus ? "-" + strRet : strRet;
+            return strRet;
+        }
+
+        private int GetRPM() {
+            int iRet = 0;
+            this.Invoke((EventHandler)delegate {
+                this.pgrBarRPM.Value = iRet;
+                this.lblRPM.Text = iRet.ToString();
+            });
+            return iRet;
         }
 
         private void Main_Load(object sender, EventArgs e) {
@@ -260,12 +427,41 @@ namespace Temperature_Sensor {
             this.chart1.Series[2].YValueMembers = "TemperSTD";
             this.chart1.ChartAreas[0].AxisX.IsStartedFromZero = true;
             this.chart1.ChartAreas[0].AxisX.Minimum = 0;
-            this.chart1.ChartAreas[0].AxisX.Interval = 1;
+            this.chart1.ChartAreas[0].AxisX.IntervalAutoMode = IntervalAutoMode.VariableCount;
+            //this.chart1.ChartAreas[0].AxisX.Interval = 1;
+            this.chart1.ChartAreas[0].AxisX.MajorGrid.LineDashStyle = ChartDashStyle.Dash;
+            this.chart1.ChartAreas[0].AxisX.MajorGrid.LineColor = Color.Gray;
             this.chart1.ChartAreas[0].AxisX.Title = "时间（秒）";
+            this.chart1.ChartAreas[0].AxisY.MajorGrid.LineDashStyle = ChartDashStyle.Dash;
+            this.chart1.ChartAreas[0].AxisY.MajorGrid.LineColor = Color.Gray;
             this.chart1.ChartAreas[0].AxisY.Title = "温度（℃）";
             this.chart1.DataSource = m_tester.GetDtTemper();
             // 测温站编号，取Wifi串口服务器的IP地址最后一位十进制值
             this.lblStatus1.Text = "测温站:" + m_cfg.Setting.Data.TCPServerIP.Split('.')[3];
+            this.lblSurrounding.Text = "--℃";
+            this.lblSetup.Text = "--℃";
+            this.lblTemper1.Text = "--℃";
+            this.lblTemper2.Text = "--℃";
+            switch (m_cfg.Setting.Data.Temper) {
+            case 0:
+                this.lblTemper1.ForeColor = Color.Green;
+                this.lblTemper2.ForeColor = Color.Green;
+                break;
+            case 1:
+                this.lblTemper1.ForeColor = Color.Green;
+                break;
+            case 2:
+                this.lblTemper2.ForeColor = Color.Green;
+                break;
+            }
+            if (m_cfg.Setting.Data.Cooling) {
+                this.lblMode.ForeColor = Color.DodgerBlue;
+                this.lblMode.Text = "制冷";
+            } else {
+                this.lblMode.ForeColor = Color.Red;
+                this.lblMode.Text = "制热";
+            }
+            this.lblRPM.Text = "0RPM";
         }
 
         private void Main_FormClosing(object sender, FormClosingEventArgs e) {
