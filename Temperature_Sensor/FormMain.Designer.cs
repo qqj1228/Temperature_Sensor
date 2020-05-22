@@ -54,6 +54,8 @@
             this.lblRPM = new System.Windows.Forms.Label();
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.MenuItemStatistics = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+            this.MenuItemLoop = new System.Windows.Forms.ToolStripMenuItem();
             this.pgrBarRPM = new Temperature_Sensor.VerticalProgressBar();
             this.tblLayoutMain.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
@@ -398,9 +400,11 @@
             // contextMenuStrip1
             // 
             this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.MenuItemStatistics});
+            this.MenuItemStatistics,
+            this.toolStripSeparator1,
+            this.MenuItemLoop});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(149, 26);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(149, 54);
             // 
             // MenuItemStatistics
             // 
@@ -408,6 +412,18 @@
             this.MenuItemStatistics.Size = new System.Drawing.Size(148, 22);
             this.MenuItemStatistics.Text = "统计信息...(&S)";
             this.MenuItemStatistics.Click += new System.EventHandler(this.MenuItemStatistics_Click);
+            // 
+            // toolStripSeparator1
+            // 
+            this.toolStripSeparator1.Name = "toolStripSeparator1";
+            this.toolStripSeparator1.Size = new System.Drawing.Size(145, 6);
+            // 
+            // MenuItemLoop
+            // 
+            this.MenuItemLoop.Name = "MenuItemLoop";
+            this.MenuItemLoop.Size = new System.Drawing.Size(148, 22);
+            this.MenuItemLoop.Text = "持续测温(&L)";
+            this.MenuItemLoop.Click += new System.EventHandler(this.MenuItemLoop_Click);
             // 
             // pgrBarRPM
             // 
@@ -479,6 +495,8 @@
         private System.Windows.Forms.TableLayoutPanel tblLayoutRPM;
         private System.Windows.Forms.Label lblRPM;
         private VerticalProgressBar pgrBarRPM;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
+        private System.Windows.Forms.ToolStripMenuItem MenuItemLoop;
     }
 }
 

@@ -31,6 +31,7 @@ namespace Temperature_Sensor {
         private bool m_bLastStatus;
         private static object m_lockObj;
         private int m_counterFailed;
+        private bool m_bLoop; // 是否需要持续测温，用于调试
 
         public Main() {
             InitializeComponent();
@@ -40,6 +41,7 @@ namespace Temperature_Sensor {
             m_bLastStatus = false;
             m_lockObj = new object();
             m_counterFailed = 0;
+            m_bLoop = false;
             this.Text = Properties.Resources.MainTitle + " Ver: " + MainFileVersion.AssemblyVersion;
             m_log = new BaseLib.Logger(".\\log", BaseLib.EnumLogLevel.LogLevelAll, true, 100);
             m_log.TraceInfo("==================================================================");
@@ -159,9 +161,9 @@ namespace Temperature_Sensor {
         }
 
         private void OnTimeTotal(object source, System.Timers.ElapsedEventArgs e) {
-            m_timerInterval.Enabled = false;
-            m_timerTotal.Enabled = false;
-            m_timerTick.Enabled = true;
+            m_timerInterval.Enabled = m_bLoop;
+            m_timerTotal.Enabled = m_bLoop;
+            m_timerTick.Enabled = !m_bLoop;
             bool bResult = false;
             double dAverage1 = 0;
             double dAverage2 = 0;
@@ -182,79 +184,83 @@ namespace Temperature_Sensor {
                 m_log.TraceError(ex.Message);
                 MessageBox.Show(ex.Message, "ExportResultFile() ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-            try {
-                m_tester.WriteDB(bResult, strTimeStamp);
-            } catch (ApplicationException ex) {
-                MessageBox.Show(ex.Message, "WriteDB() ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            } catch (Exception ex) {
-                m_log.TraceError(ex.Message);
-                MessageBox.Show(ex.Message, "WriteDB() ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            if (bResult) {
-                m_counterFailed = 0;
-            } else {
-                ++m_counterFailed;
-            }
-            this.Invoke((EventHandler)delegate {
-                if (bResult) {
-                    this.lblInfo.ForeColor = Color.Green;
-                    this.lblInfo.Text = "合格";
-                } else {
-                    this.lblInfo.ForeColor = Color.Red;
-                    this.lblInfo.Text = "不合格";
+            if (!m_bLoop) {
+                try {
+                    m_tester.WriteDB(bResult, strTimeStamp);
+                } catch (ApplicationException ex) {
+                    MessageBox.Show(ex.Message, "WriteDB() ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                } catch (Exception ex) {
+                    m_log.TraceError(ex.Message);
+                    MessageBox.Show(ex.Message, "WriteDB() ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
-                switch (m_cfg.Setting.Data.Rule) {
-                case 1:
-                    this.lblInfo.Text += ", 平均温度: ";
-                    switch (m_cfg.Setting.Data.Temper) {
-                    case 0:
-                        this.lblInfo.Text += dAverage1.ToString("F2") + "℃/" + dAverage2.ToString("F2") + "℃";
-                        break;
+                if (bResult) {
+                    m_counterFailed = 0;
+                } else {
+                    ++m_counterFailed;
+                }
+                this.Invoke((EventHandler)delegate {
+                    if (bResult) {
+                        this.lblInfo.ForeColor = Color.Green;
+                        this.lblInfo.Text = "合格";
+                    } else {
+                        this.lblInfo.ForeColor = Color.Red;
+                        this.lblInfo.Text = "不合格";
+                    }
+                    switch (m_cfg.Setting.Data.Rule) {
                     case 1:
-                        this.lblInfo.Text += dAverage1.ToString("F2") + "℃";
+                        this.lblInfo.Text += ", 平均温度: ";
+                        switch (m_cfg.Setting.Data.Temper) {
+                        case 0:
+                            this.lblInfo.Text += dAverage1.ToString("F2") + "℃/" + dAverage2.ToString("F2") + "℃";
+                            break;
+                        case 1:
+                            this.lblInfo.Text += dAverage1.ToString("F2") + "℃";
+                            break;
+                        case 2:
+                            this.lblInfo.Text += dAverage2.ToString("F2") + "℃";
+                            break;
+                        }
                         break;
                     case 2:
-                        this.lblInfo.Text += dAverage2.ToString("F2") + "℃";
+                        this.lblInfo.Text += ", 连续合格温度点";
+                        if (m_cfg.Setting.Data.SuccessiveValue > 1) {
+                            // 绝对值
+                            switch (m_cfg.Setting.Data.Temper) {
+                            case 0:
+                                this.lblInfo.Text += "个数: " + dCount1.ToString("F0") + "个/" + dCount2.ToString("F0") + "个";
+                                break;
+                            case 1:
+                                this.lblInfo.Text += dCount1.ToString("F0") + "个";
+                                break;
+                            case 2:
+                                this.lblInfo.Text += dCount2.ToString("F0") + "个";
+                                break;
+                            }
+                        } else {
+                            // 比率
+                            switch (m_cfg.Setting.Data.Temper) {
+                            case 0:
+                                this.lblInfo.Text += "占比: " + (dCount1 * 100).ToString("F2") + "%/" + (dCount2 * 100).ToString("F2") + "%";
+                                break;
+                            case 1:
+                                this.lblInfo.Text += (dCount1 * 100).ToString("F2") + "%";
+                                break;
+                            case 2:
+                                this.lblInfo.Text += (dCount2 * 100).ToString("F2") + "%";
+                                break;
+                            }
+                        }
                         break;
                     }
-                    break;
-                case 2:
-                    this.lblInfo.Text += ", 连续合格温度点";
-                    if (m_cfg.Setting.Data.SuccessiveValue > 1) {
-                        // 绝对值
-                        switch (m_cfg.Setting.Data.Temper) {
-                        case 0:
-                            this.lblInfo.Text += "个数: " + dCount1.ToString("F0") + "个/" + dCount2.ToString("F0") + "个";
-                            break;
-                        case 1:
-                            this.lblInfo.Text += dCount1.ToString("F0") + "个";
-                            break;
-                        case 2:
-                            this.lblInfo.Text += dCount2.ToString("F0") + "个";
-                            break;
-                        }
-                    } else {
-                        // 比率
-                        switch (m_cfg.Setting.Data.Temper) {
-                        case 0:
-                            this.lblInfo.Text += "占比: " + (dCount1 * 100).ToString("F2") + "%/" + (dCount2 * 100).ToString("F2") + "%";
-                            break;
-                        case 1:
-                            this.lblInfo.Text += (dCount1 * 100).ToString("F2") + "%";
-                            break;
-                        case 2:
-                            this.lblInfo.Text += (dCount2 * 100).ToString("F2") + "%";
-                            break;
-                        }
+                    if (m_counterFailed >= m_cfg.Setting.Data.TestFailedQty) {
+                        this.lblInfo.Text += ", 已连续" + m_counterFailed.ToString() + "辆车不合格";
+                        this.lblInfo.BackColor = Color.Red;
+                        this.lblInfo.ForeColor = Color.White;
                     }
-                    break;
-                }
-                if (m_counterFailed >= m_cfg.Setting.Data.TestFailedQty) {
-                    this.lblInfo.Text += ", 已连续" + m_counterFailed.ToString() + "辆车不合格";
-                    this.lblInfo.BackColor = Color.Red;
-                    this.lblInfo.ForeColor = Color.White;
-                }
-            });
+                });
+            } else {
+                StartTest();
+            }
             m_bTesting = false;
         }
 
@@ -480,6 +486,11 @@ namespace Temperature_Sensor {
             FormStatistics form = new FormStatistics(m_tester);
             form.ShowDialog();
             form.Dispose();
+        }
+
+        private void MenuItemLoop_Click(object sender, EventArgs e) {
+            m_bLoop = true;
+            StartTest();
         }
     }
 
