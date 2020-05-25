@@ -11,7 +11,7 @@ namespace Temperature_Sensor {
         public string ScannerPort { get; set; } // 扫码枪串口号，空字符串表示不用串口扫码枪
         public int ScannerBaud { get; set; } // 扫码枪波特率
         public int Interval { get; set; } // 温度采样时间间隔，单位ms
-        public int TotalTime { get; set; } // 温度采样总时间，单位ms
+        public int TotalTime { get; set; } // 温度采样总时间，单位s
         public string DBIP { get; set; } // 数据库IP地址
         public string DBPort { get; set; } // 数据库端口号
         public string DBUser { get; set; } // 数据库用户名
@@ -31,7 +31,7 @@ namespace Temperature_Sensor {
             ScannerPort = "COM5";
             ScannerBaud = 9600;
             Interval = 500;
-            TotalTime = 10000;
+            TotalTime = 10;
             DBIP = "127.0.0.1";
             DBPort = "1433";
             DBUser = "sa";

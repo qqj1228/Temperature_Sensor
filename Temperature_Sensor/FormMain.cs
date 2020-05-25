@@ -78,7 +78,7 @@ namespace Temperature_Sensor {
             m_timerInterval.Elapsed += new System.Timers.ElapsedEventHandler(OnTimeInterval);
             m_timerInterval.AutoReset = true;
             m_timerInterval.Enabled = false;
-            m_timerTotal = new System.Timers.Timer(m_cfg.Setting.Data.TotalTime + m_cfg.Setting.Data.Interval);
+            m_timerTotal = new System.Timers.Timer(m_cfg.Setting.Data.TotalTime * 1000 + m_cfg.Setting.Data.Interval);
             m_timerTotal.Elapsed += new System.Timers.ElapsedEventHandler(OnTimeTotal);
             m_timerTotal.AutoReset = true;
             m_timerTotal.Enabled = false;
@@ -114,11 +114,11 @@ namespace Temperature_Sensor {
             }
         }
 
-        private CancellationTokenSource UpdateUITask(string strMsg, int msDelay) {
-            CancellationTokenSource tokenSource = new CancellationTokenSource(msDelay);
+        private CancellationTokenSource UpdateUITask(string strMsg, int secondDelay) {
+            CancellationTokenSource tokenSource = new CancellationTokenSource(secondDelay * 1000);
             CancellationToken token = tokenSource.Token;
             Task.Factory.StartNew(() => {
-                int total = msDelay / 1000;
+                int total = secondDelay;
                 int count = 0;
                 while (!token.IsCancellationRequested) {
                     try {
@@ -172,17 +172,25 @@ namespace Temperature_Sensor {
             switch (m_cfg.Setting.Data.Rule) {
             case 1:
                 bResult = m_tester.GetResult1(m_dSetup, out dAverage1, out dAverage2);
+                m_log.TraceInfo(string.Format("Get the test result: {0}, average: {1}℃/{2}℃", bResult, dAverage1.ToString("F2"), dAverage2.ToString("F2")));
                 break;
             case 2:
                 bResult = m_tester.GetResult2(m_dSetup, out dCount1, out dCount2);
+                if (m_cfg.Setting.Data.SuccessiveValue > 1) {
+                    m_log.TraceInfo(string.Format("Get the test result: {0}, count: {1}/{2}", bResult, dCount1.ToString("F0"), dCount2.ToString("F0")));
+                } else {
+                    m_log.TraceInfo(string.Format("Get the test result: {0}, percentage: {1}%/{2}%", bResult, dCount1.ToString("F2"), dCount2.ToString("F2")));
+                }
                 break;
             }
             string strTimeStamp = m_tester.GetTimeStamp();
             try {
                 m_tester.ExportResultFile(bResult, strTimeStamp);
             } catch (Exception ex) {
-                m_log.TraceError(ex.Message);
-                MessageBox.Show(ex.Message, "ExportResultFile() ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                m_log.TraceError("ExportResultFile() ERROR: " + ex.Message);
+                if (!m_bLoop) {
+                    MessageBox.Show(ex.Message, "ExportResultFile() ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
             if (!m_bLoop) {
                 try {
@@ -190,7 +198,7 @@ namespace Temperature_Sensor {
                 } catch (ApplicationException ex) {
                     MessageBox.Show(ex.Message, "WriteDB() ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 } catch (Exception ex) {
-                    m_log.TraceError(ex.Message);
+                    m_log.TraceError("WriteDB() ERROR: " + ex.Message);
                     MessageBox.Show(ex.Message, "WriteDB() ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 if (bResult) {
@@ -253,6 +261,7 @@ namespace Temperature_Sensor {
                         break;
                     }
                     if (m_counterFailed >= m_cfg.Setting.Data.TestFailedQty) {
+                        m_log.TraceWarning(string.Format("There are {0} NG vehicles", m_counterFailed));
                         this.lblInfo.Text += ", 已连续" + m_counterFailed.ToString() + "辆车不合格";
                         this.lblInfo.BackColor = Color.Red;
                         this.lblInfo.ForeColor = Color.White;

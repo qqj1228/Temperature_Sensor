@@ -156,24 +156,28 @@ namespace Temperature_Sensor {
 
         private string[] SplitTemper(string strMsg) {
             string[] result = new string[TotalChannel];
-            if (strMsg.StartsWith(">") && strMsg.EndsWith("\r")) {
-                string strTemp = strMsg.Substring(1, strMsg.Length - 1).Trim();
-                int OverLen = OverRange.Length;
-                for (int i = 0; i < TotalChannel; i++) {
-                    if (strTemp.StartsWith(OverRange) || strTemp.StartsWith(UnderRange)) {
-                        result[i] = strTemp.Substring(0, OverLen);
-                        strTemp = strTemp.Substring(OverLen);
-                    } else if (strTemp.Length >= NormalLength) {
-                        result[i] = strTemp.Substring(0, NormalLength);
-                        strTemp = strTemp.Substring(NormalLength);
-                    } else {
+            try {
+                if (strMsg.StartsWith(">") && strMsg.EndsWith("\r")) {
+                    string strTemp = strMsg.Substring(1, strMsg.Length - 1).Trim();
+                    int OverLen = OverRange.Length;
+                    for (int i = 0; i < TotalChannel; i++) {
+                        if (strTemp.StartsWith(OverRange) || strTemp.StartsWith(UnderRange)) {
+                            result[i] = strTemp.Substring(0, OverLen);
+                            strTemp = strTemp.Substring(OverLen);
+                        } else if (strTemp.Length >= NormalLength) {
+                            result[i] = strTemp.Substring(0, NormalLength);
+                            strTemp = strTemp.Substring(NormalLength);
+                        } else {
+                            result[i] = null;
+                        }
+                    }
+                } else {
+                    for (int i = 0; i < TotalChannel; i++) {
                         result[i] = null;
                     }
                 }
-            } else {
-                for (int i = 0; i < TotalChannel; i++) {
-                    result[i] = null;
-                }
+            } catch (Exception ex) {
+                m_log.TraceError("SplitTemper() ERROR: " + ex.Message);
             }
             return result;
         }
@@ -240,6 +244,7 @@ namespace Temperature_Sensor {
             dr["Temper2"] = (tempers[1] != OverRange && tempers[1] != UnderRange) ? tempers[1] : null;
             dr["TemperSTD"] = strSetup;
             m_dtTemper.Rows.Add(dr);
+            m_log.TraceInfo(string.Format("GetData: Time[{0}], Temper1[{1}], Temper2[{2}], TemperSTD[{3}]", dr["Time"], dr["Temper1"], dr["Temper2"], dr["TemperSTD"]));
             return tempers;
         }
 
