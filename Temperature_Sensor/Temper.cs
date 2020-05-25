@@ -144,10 +144,10 @@ namespace Temperature_Sensor {
                             strRecv += Encoding.ASCII.GetString(m_recvBuf, 0, bytesRead);
                         }
                     }
+                    m_log.TraceInfo("TcpClient receiev: " + strRecv.Replace("\r", "\\r"));
                 } catch (Exception ex) {
                     m_log.TraceError("TcpClient receiev error: " + ex.Message);
                 }
-                m_log.TraceInfo("TcpClient receiev: " + strRecv.Replace("\r", "\\r"));
             } else {
                 m_log.TraceError("TcpClient can't connect server");
             }
@@ -236,8 +236,8 @@ namespace Temperature_Sensor {
             }
             dr["Time"] = interval.TotalSeconds.ToString("F1");
             string[] tempers = GetTemper();
-            dr["Temper1"] = tempers[0] != OverRange && tempers[0] != UnderRange ? tempers[0] : null;
-            dr["Temper2"] = tempers[1] != OverRange && tempers[1] != UnderRange ? tempers[1] : null;
+            dr["Temper1"] = (tempers[0] != OverRange && tempers[0] != UnderRange) ? tempers[0] : null;
+            dr["Temper2"] = (tempers[1] != OverRange && tempers[1] != UnderRange) ? tempers[1] : null;
             dr["TemperSTD"] = strSetup;
             m_dtTemper.Rows.Add(dr);
             return tempers;

@@ -161,9 +161,9 @@ namespace Temperature_Sensor {
         }
 
         private void OnTimeTotal(object source, System.Timers.ElapsedEventArgs e) {
-            m_timerInterval.Enabled = m_bLoop;
-            m_timerTotal.Enabled = m_bLoop;
-            m_timerTick.Enabled = !m_bLoop;
+            m_timerInterval.Enabled = false;
+            m_timerTotal.Enabled = false;
+            m_timerTick.Enabled = true;
             bool bResult = false;
             double dAverage1 = 0;
             double dAverage2 = 0;
@@ -398,7 +398,7 @@ namespace Temperature_Sensor {
         }
 
         private string GetDisplay(string strValue) {
-            bool bMinus = strValue.StartsWith("-") ? true : false;
+            bool bMinus = strValue.StartsWith("-");
             string strRet = strValue.Replace("+", "").Replace("-", "").Trim('0');
             strRet = bMinus ? "-" + strRet : strRet;
             return strRet;

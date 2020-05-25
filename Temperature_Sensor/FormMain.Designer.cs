@@ -52,11 +52,11 @@
             this.grpBoxRPM = new System.Windows.Forms.GroupBox();
             this.tblLayoutRPM = new System.Windows.Forms.TableLayoutPanel();
             this.lblRPM = new System.Windows.Forms.Label();
+            this.pgrBarRPM = new Temperature_Sensor.VerticalProgressBar();
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.MenuItemStatistics = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.MenuItemLoop = new System.Windows.Forms.ToolStripMenuItem();
-            this.pgrBarRPM = new Temperature_Sensor.VerticalProgressBar();
             this.tblLayoutMain.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.tblLayoutStatus.SuspendLayout();
@@ -397,6 +397,16 @@
             this.lblRPM.Text = "9999RPM";
             this.lblRPM.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
+            // pgrBarRPM
+            // 
+            this.pgrBarRPM.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.pgrBarRPM.Location = new System.Drawing.Point(21, 3);
+            this.pgrBarRPM.Maximum = 5000;
+            this.pgrBarRPM.Name = "pgrBarRPM";
+            this.pgrBarRPM.Size = new System.Drawing.Size(24, 237);
+            this.pgrBarRPM.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
+            this.pgrBarRPM.TabIndex = 2;
+            // 
             // contextMenuStrip1
             // 
             this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -424,16 +434,6 @@
             this.MenuItemLoop.Size = new System.Drawing.Size(148, 22);
             this.MenuItemLoop.Text = "持续测温(&L)";
             this.MenuItemLoop.Click += new System.EventHandler(this.MenuItemLoop_Click);
-            // 
-            // pgrBarRPM
-            // 
-            this.pgrBarRPM.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pgrBarRPM.Location = new System.Drawing.Point(21, 3);
-            this.pgrBarRPM.Maximum = 5000;
-            this.pgrBarRPM.Name = "pgrBarRPM";
-            this.pgrBarRPM.Size = new System.Drawing.Size(24, 237);
-            this.pgrBarRPM.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
-            this.pgrBarRPM.TabIndex = 2;
             // 
             // Main
             // 
