@@ -168,12 +168,12 @@ namespace Temperature_Sensor {
                             result[i] = strTemp.Substring(0, NormalLength);
                             strTemp = strTemp.Substring(NormalLength);
                         } else {
-                            result[i] = null;
+                            result[i] = "";
                         }
                     }
                 } else {
                     for (int i = 0; i < TotalChannel; i++) {
-                        result[i] = null;
+                        result[i] = "";
                     }
                 }
             } catch (Exception ex) {
