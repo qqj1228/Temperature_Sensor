@@ -40,7 +40,7 @@ namespace Temperature_Sensor {
             Cooling = true;
             TestFailedQty = 3;
             UsingRPM = false;
-            IdleRPMMin = 500;
+            IdleRPMMin = 600;
             Temper = 0;
             Rule = 1;
             SuccessiveValue = 0.5;

@@ -42,6 +42,9 @@
       <HintPath>..\packages\EPPlus.4.5.3.3\lib\net40\EPPlus.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
+    <Reference Include="SH_OBD_DLL">
+      <HintPath>bin\Debug\SH_OBD_DLL.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
@@ -72,6 +75,7 @@
     </Compile>
     <Compile Include="Logger.cs" />
     <Compile Include="Model.cs" />
+    <Compile Include="OBDDll.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SerialPort.cs" />

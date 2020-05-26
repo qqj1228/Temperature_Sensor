@@ -30,4 +30,8 @@
   <Rule>1</Rule>
   <!-- 连续点设定值，小于1为比率，大于1为绝对值 -->
   <SuccessiveValue>0.5</SuccessiveValue>
+  <!-- 是否使用引擎转速来判断空调开启状态 -->
+  <UsingRPM>true</UsingRPM>
+  <!-- 最低怠速转速，大于等于该转速的话即认为空调已打开 -->
+  <IdleRPMMin>600</IdleRPMMin>
 </Setting>

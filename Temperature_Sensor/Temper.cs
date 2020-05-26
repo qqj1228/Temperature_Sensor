@@ -126,9 +126,9 @@ namespace Temperature_Sensor {
             try {
                 m_clientStream.Write(sendMsg, 0, sendMsg.Length);
                 m_clientStream.Flush();
-                m_log.TraceInfo("TcpClient send: " + strMsg.Replace("\r", "\\r"));
+                m_log.TraceInfo("TcpClient sent: " + strMsg.Replace("\r", "\\r"));
             } catch (Exception ex) {
-                m_log.TraceError("TcpClient send error: " + ex.Message);
+                m_log.TraceError("TcpClient sending error: " + ex.Message);
                 m_client.Close();
                 bConnected = TCPClientInit();
             }
@@ -138,15 +138,21 @@ namespace Temperature_Sensor {
             string strRecv = "";
             if (bConnected) {
                 try {
+                    DateTime before = DateTime.Now;
+                    TimeSpan interval;
                     while (!strRecv.Contains("\r")) {
                         while (m_clientStream.DataAvailable) {
                             bytesRead = m_clientStream.Read(m_recvBuf, 0, m_bufSize);
                             strRecv += Encoding.ASCII.GetString(m_recvBuf, 0, bytesRead);
                         }
+                        interval = DateTime.Now - before;
+                        if (interval.TotalMilliseconds >= m_cfg.Setting.Data.Interval * 2) {
+                            throw new ApplicationException("TcpClient Receieving Timeout");
+                        }
                     }
-                    m_log.TraceInfo("TcpClient receiev: " + strRecv.Replace("\r", "\\r"));
+                    m_log.TraceInfo("TcpClient receieved: " + strRecv.Replace("\r", "\\r"));
                 } catch (Exception ex) {
-                    m_log.TraceError("TcpClient receiev error: " + ex.Message);
+                    m_log.TraceError("TcpClient receieving error: " + ex.Message);
                 }
             } else {
                 m_log.TraceError("TcpClient can't connect server");

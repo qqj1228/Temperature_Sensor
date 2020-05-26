@@ -22,6 +22,7 @@ namespace Temperature_Sensor {
         private readonly BaseLib.Model m_db;
         private readonly Temper m_tester;
         private readonly BaseLib.SerialPortClass m_sp;
+        private readonly OBDDll m_obdDll;
         private string m_serialRecvBuf;
         private readonly System.Timers.Timer m_timerInterval;
         private readonly System.Timers.Timer m_timerTotal;
@@ -32,6 +33,7 @@ namespace Temperature_Sensor {
         private static object m_lockObj;
         private int m_counterFailed;
         private bool m_bLoop; // 是否需要持续测温，用于调试
+        private bool m_OBDInited;
 
         public Main() {
             InitializeComponent();
@@ -42,8 +44,9 @@ namespace Temperature_Sensor {
             m_lockObj = new object();
             m_counterFailed = 0;
             m_bLoop = false;
+            m_OBDInited = false;
             this.Text = Properties.Resources.MainTitle + " Ver: " + MainFileVersion.AssemblyVersion;
-            m_log = new BaseLib.Logger(".\\log", BaseLib.EnumLogLevel.LogLevelAll, true, 100);
+            m_log = new BaseLib.Logger(".\\log\\Temper", BaseLib.EnumLogLevel.LogLevelAll, true, 100);
             m_log.TraceInfo("==================================================================");
             m_log.TraceInfo("===================== START Ver: " + MainFileVersion.AssemblyVersion + " =====================");
             m_cfg = new Config(m_log);
@@ -74,6 +77,7 @@ namespace Temperature_Sensor {
                     MessageBox.Show("打开串口扫码枪出错", "初始化错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
+            m_obdDll = new OBDDll(m_log);
             m_timerInterval = new System.Timers.Timer(m_cfg.Setting.Data.Interval);
             m_timerInterval.Elapsed += new System.Timers.ElapsedEventHandler(OnTimeInterval);
             m_timerInterval.AutoReset = true;
@@ -150,6 +154,9 @@ namespace Temperature_Sensor {
             m_timerTick.Enabled = false;
             string[] tempers = m_tester.GetData(m_start, m_dSetup.ToString());
             try {
+                if (m_cfg.Setting.Data.UsingRPM) {
+                    GetRPM();
+                }
                 this.Invoke((EventHandler)delegate {
                     this.chart1.DataBind();
                     this.lblTemper1.Text = GetDisplay(tempers[0]) + "℃";
@@ -332,8 +339,35 @@ namespace Temperature_Sensor {
                     this.lblInfo.Text = "启动车辆，打开空调，开至最大";
                 });
                 if (m_cfg.Setting.Data.UsingRPM) {
-                    while (m_cfg.Setting.Data.IdleRPMMin > GetRPM()) {
-                        Thread.Sleep(m_cfg.Setting.Data.Interval);
+                    if (m_obdDll.InitOBDDll()) {
+                        m_OBDInited = true;
+                        CancellationTokenSource tokenSource = UpdateUITask("等待启动车辆，并打开空调至最大", m_cfg.Setting.Data.TotalTime / 2);
+                        DateTime before = DateTime.Now;
+                        TimeSpan interval;
+                        while (m_OBDInited && m_cfg.Setting.Data.IdleRPMMin > GetRPM()) {
+                            Thread.Sleep(m_cfg.Setting.Data.Interval);
+                            interval = DateTime.Now - before;
+                            if (interval.TotalSeconds >= m_cfg.Setting.Data.TotalTime / 2) {
+                                m_OBDInited = false;
+                                this.Invoke((EventHandler)delegate {
+                                    this.lblInfo.BackColor = this.lblLogo.BackColor;
+                                    this.lblInfo.ForeColor = Color.Red;
+                                    this.lblInfo.Text = "等待启动车辆超时！";
+                                });
+                                m_bTesting = false;
+                                return;
+                            }
+                        }
+                        tokenSource.Cancel();
+                    } else {
+                        m_OBDInited = false;
+                        this.Invoke((EventHandler)delegate {
+                            this.lblInfo.BackColor = this.lblLogo.BackColor;
+                            this.lblInfo.ForeColor = Color.Red;
+                            this.lblInfo.Text = "无法连接车辆OBD！";
+                        });
+                        m_bTesting = false;
+                        return;
                     }
                 }
                 // 开始检测
@@ -359,6 +393,7 @@ namespace Temperature_Sensor {
                     this.lblInfo.ForeColor = Color.Red;
                     this.lblInfo.Text = "获取环境温度失败";
                 });
+                m_bTesting = false;
             }
         }
 
@@ -414,11 +449,16 @@ namespace Temperature_Sensor {
         }
 
         private int GetRPM() {
-            int iRet = 0;
-            this.Invoke((EventHandler)delegate {
-                this.pgrBarRPM.Value = iRet;
-                this.lblRPM.Text = iRet.ToString();
-            });
+            string strRPM = m_obdDll.GetPID0C();
+            if (int.TryParse(strRPM, out int iRet)) {
+                this.Invoke((EventHandler)delegate {
+                    if (iRet > this.pgrBarRPM.Maximum) {
+                        iRet = this.pgrBarRPM.Maximum;
+                    }
+                    this.pgrBarRPM.Value = iRet;
+                    this.lblRPM.Text = iRet.ToString() + "RPM";
+                });
+            }
             return iRet;
         }
 
@@ -455,11 +495,12 @@ namespace Temperature_Sensor {
             this.lblStatus1.Text = "测温站:" + m_cfg.Setting.Data.TCPServerIP.Split('.')[3];
             this.lblSurrounding.Text = "--℃";
             this.lblSetup.Text = "--℃";
+            this.lblSetup.ForeColor = Color.Red;
             this.lblTemper1.Text = "--℃";
             this.lblTemper2.Text = "--℃";
             switch (m_cfg.Setting.Data.Temper) {
             case 0:
-                this.lblTemper1.ForeColor = Color.Green;
+                this.lblTemper1.ForeColor = Color.DodgerBlue;
                 this.lblTemper2.ForeColor = Color.Green;
                 break;
             case 1:
@@ -477,6 +518,7 @@ namespace Temperature_Sensor {
                 this.lblMode.Text = "制热";
             }
             this.lblRPM.Text = "0RPM";
+            this.pgrBarRPM.Maximum = m_cfg.Setting.Data.IdleRPMMin * 10;
         }
 
         private void Main_FormClosing(object sender, FormClosingEventArgs e) {
