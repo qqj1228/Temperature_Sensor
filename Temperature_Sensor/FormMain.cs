@@ -154,7 +154,7 @@ namespace Temperature_Sensor {
             m_timerTick.Enabled = false;
             string[] tempers = m_tester.GetData(m_start, m_dSetup.ToString());
             try {
-                if (m_cfg.Setting.Data.UsingRPM) {
+                if (m_cfg.Setting.Data.UsingRPM && !m_bLoop) {
                     GetRPM();
                 }
                 this.Invoke((EventHandler)delegate {
@@ -275,7 +275,7 @@ namespace Temperature_Sensor {
                     }
                 });
             } else {
-                StartTest();
+                Task.Factory.StartNew(StartTest);
             }
             m_bTesting = false;
         }
@@ -338,7 +338,7 @@ namespace Temperature_Sensor {
                     this.lblInfo.ForeColor = this.lblLogo.ForeColor;
                     this.lblInfo.Text = "启动车辆，打开空调，开至最大";
                 });
-                if (m_cfg.Setting.Data.UsingRPM) {
+                if (m_cfg.Setting.Data.UsingRPM && !m_bLoop) {
                     if (!m_obdDll.TestTCP()) {
                         m_OBDInited = false;
                         this.Invoke((EventHandler)delegate {
@@ -444,8 +444,7 @@ namespace Temperature_Sensor {
                 if (tb.Text.Length == 17) {
                     m_bTesting = true;
                     m_tester.StrVIN = tb.Text;
-                    CancellationTokenSource tokenSource = new CancellationTokenSource(m_cfg.Setting.Data.Interval);
-                    Task.Factory.StartNew(StartTest, tokenSource.Token);
+                    Task.Factory.StartNew(StartTest);
                     this.txtBoxVIN.SelectAll();
                 }
             }
@@ -556,7 +555,7 @@ namespace Temperature_Sensor {
 
         private void MenuItemLoop_Click(object sender, EventArgs e) {
             m_bLoop = true;
-            StartTest();
+            Task.Factory.StartNew(StartTest);
         }
     }
 
