@@ -339,6 +339,16 @@ namespace Temperature_Sensor {
                     this.lblInfo.Text = "启动车辆，打开空调，开至最大";
                 });
                 if (m_cfg.Setting.Data.UsingRPM) {
+                    if (!m_obdDll.TestTCP()) {
+                        m_OBDInited = false;
+                        this.Invoke((EventHandler)delegate {
+                            this.lblInfo.BackColor = this.lblLogo.BackColor;
+                            this.lblInfo.ForeColor = Color.Red;
+                            this.lblInfo.Text = "与VCI设备的无线连接异常！";
+                        });
+                        m_bTesting = false;
+                        return;
+                    }
                     if (m_obdDll.InitOBDDll()) {
                         m_OBDInited = true;
                         CancellationTokenSource tokenSource = UpdateUITask("等待启动车辆，并打开空调至最大", m_cfg.Setting.Data.TotalTime / 2);
@@ -449,7 +459,12 @@ namespace Temperature_Sensor {
         }
 
         private int GetRPM() {
-            string strRPM = m_obdDll.GetPID0C();
+            string strRPM = "";
+            try {
+                strRPM = m_obdDll.GetPID0C().First().Value;
+            } catch (Exception ex) {
+                m_log.TraceError("GetRPM() ERROR: " + ex.Message);
+            }
             if (int.TryParse(strRPM, out int iRet)) {
                 this.Invoke((EventHandler)delegate {
                     if (iRet > this.pgrBarRPM.Maximum) {

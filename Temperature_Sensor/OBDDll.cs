@@ -28,8 +28,9 @@ namespace Temperature_Sensor {
             return true;
         }
 
-        public string GetPID0C() {
-            string strRet = "";
+        public Dictionary<string, string> GetPID0C() {
+            Dictionary<string, string> dicRet = new Dictionary<string, string>();
+            string strVal = "";
             OBDParameter param = new OBDParameter();
             if (m_obd.OBDif.STDType == StandardType.ISO_27145) {
                 param.OBDRequest = "22F40C";
@@ -52,22 +53,28 @@ namespace Temperature_Sensor {
                 if (m_obd.Mode01Support.ContainsKey(value.ECUResponseID) && m_obd.Mode01Support[value.ECUResponseID][(param.Parameter & 0x00FF) - 1]) {
                     if ((param.ValueTypes & (int)OBDParameter.EnumValueTypes.Bool) != 0) {
                         if (value.BoolValue) {
-                            strRet = "ON";
+                            strVal = "ON";
                         } else {
-                            strRet = "OFF";
+                            strVal = "OFF";
                         }
                     } else if ((param.ValueTypes & (int)OBDParameter.EnumValueTypes.Double) != 0) {
-                        strRet = value.DoubleValue.ToString();
+                        strVal = value.DoubleValue.ToString();
                     } else if ((param.ValueTypes & (int)OBDParameter.EnumValueTypes.String) != 0) {
-                        strRet = value.StringValue;
+                        strVal = value.StringValue;
                     } else if ((param.ValueTypes & (int)OBDParameter.EnumValueTypes.ShortString) != 0) {
-                        strRet = value.ShortStringValue;
+                        strVal = value.ShortStringValue;
                     }
-                    break;
                 }
+                dicRet.Add(value.ECUResponseID, strVal);
             }
-            return strRet;
+            return dicRet;
         }
 
+        public bool TestTCP() {
+            if (m_obd.OBDif.CommSettings.ComPort > 0) {
+                return true;
+            }
+            return m_obd.TestTCP();
+        }
     }
 }
