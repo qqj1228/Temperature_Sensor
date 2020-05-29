@@ -339,12 +339,14 @@ namespace Temperature_Sensor {
                     this.lblInfo.Text = "启动车辆，打开空调，开至最大";
                 });
                 if (m_cfg.Setting.Data.UsingRPM && !m_bLoop) {
+                    // 与ELM327并不是保持长连接（从OBD接口上拔下后设备就断电了）
+                    // 故只在每次需要读取引擎转速之前才测试是否连接正常
                     if (!m_obdDll.TestTCP()) {
                         m_OBDInited = false;
                         this.Invoke((EventHandler)delegate {
                             this.lblInfo.BackColor = this.lblLogo.BackColor;
                             this.lblInfo.ForeColor = Color.Red;
-                            this.lblInfo.Text = "与VCI设备的无线连接异常！";
+                            this.lblInfo.Text = "与VCI设备的无线连接发生异常！";
                         });
                         m_bTesting = false;
                         return;

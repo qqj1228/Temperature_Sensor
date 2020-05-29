@@ -15,6 +15,7 @@ namespace Temperature_Sensor {
         private const string OverRange = "+9999"; // RTD模块读数超过上限时返回的字符串
         private const string UnderRange = "-0000"; // RTD模块读数超过下限时返回的字符串
         private const int NormalLength = 7; // RTD模块返回正常读数的字符串长度
+        private const int TimeoutScale = 10; // 获取温度返回值的超时倍数
         private readonly BaseLib.Logger m_log;
         private readonly Config m_cfg;
         private readonly BaseLib.Model m_db;
@@ -112,6 +113,9 @@ namespace Temperature_Sensor {
         /// 以string[]格式返回，[通道0, 通道1]
         /// </summary>
         public string[] GetTemper() {
+            DateTime before = DateTime.Now;
+            TimeSpan interval;
+
             // 获取当前连接状态
             bool bConnected = TestConnect();
             // 发送读取温度命令
@@ -138,21 +142,20 @@ namespace Temperature_Sensor {
             string strRecv = "";
             if (bConnected) {
                 try {
-                    DateTime before = DateTime.Now;
-                    TimeSpan interval;
                     while (!strRecv.Contains("\r")) {
+                        interval = DateTime.Now - before;
+                        if (interval.TotalMilliseconds > m_cfg.Setting.Data.Interval * TimeoutScale) {
+                            m_log.TraceWarning("TcpClient timeout receieved: " + strRecv.Replace("\r", "\\r"));
+                            throw new ApplicationException("TcpClient receieving timeout");
+                        }
                         while (m_clientStream.DataAvailable) {
                             bytesRead = m_clientStream.Read(m_recvBuf, 0, m_bufSize);
                             strRecv += Encoding.ASCII.GetString(m_recvBuf, 0, bytesRead);
                         }
-                        interval = DateTime.Now - before;
-                        if (interval.TotalMilliseconds >= m_cfg.Setting.Data.Interval * 2) {
-                            throw new ApplicationException("TcpClient Receieving Timeout");
-                        }
                     }
                     m_log.TraceInfo("TcpClient receieved: " + strRecv.Replace("\r", "\\r"));
                 } catch (Exception ex) {
-                    m_log.TraceError("TcpClient receieving error: " + ex.Message);
+                    m_log.TraceError("TcpClient receieving ERROR: " + ex.Message);
                 }
             } else {
                 m_log.TraceError("TcpClient can't connect server");
@@ -239,13 +242,13 @@ namespace Temperature_Sensor {
         }
 
         public string[] GetData(DateTime start, string strSetup) {
+            string[] tempers = GetTemper();
             DataRow dr = m_dtTemper.NewRow();
             TimeSpan interval = DateTime.Now - start;
             if (interval.TotalSeconds < 0.001) {
                 interval = TimeSpan.Zero;
             }
             dr["Time"] = interval.TotalSeconds.ToString("F1");
-            string[] tempers = GetTemper();
             dr["Temper1"] = (tempers[0] != OverRange && tempers[0] != UnderRange) ? tempers[0] : null;
             dr["Temper2"] = (tempers[1] != OverRange && tempers[1] != UnderRange) ? tempers[1] : null;
             dr["TemperSTD"] = strSetup;
