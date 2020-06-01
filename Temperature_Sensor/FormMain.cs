@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO.Ports;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -15,6 +16,7 @@ using System.Windows.Forms.DataVisualization.Charting;
 
 namespace Temperature_Sensor {
     public partial class Main : Form {
+        private const double ERROR_VAL = +9999;
         private static bool m_bTesting;
         private float m_lastHeight;
         private readonly BaseLib.Logger m_log;
@@ -34,6 +36,9 @@ namespace Temperature_Sensor {
         private int m_counterFailed;
         private bool m_bLoop; // 是否需要持续测温，用于调试
         private bool m_OBDInited;
+        private CancellationTokenSource m_ctsAmbient;
+        private CancellationTokenSource m_ctsStartVehicle;
+        private CancellationTokenSource m_ctsTesting;
 
         public Main() {
             InitializeComponent();
@@ -118,28 +123,67 @@ namespace Temperature_Sensor {
             }
         }
 
+        /// <summary>
+        /// 更新UI界面显示
+        /// strMsg      - 界面显示的提示字符
+        /// secondDelay - 总显示时间，单位秒，若为正则显示剩余时间，若为负则循环显示滚动字符
+        /// </summary>
+        /// <param name="strMsg"></param>
+        /// <param name="secondDelay"></param>
+        /// <returns></returns>
         private CancellationTokenSource UpdateUITask(string strMsg, int secondDelay) {
-            CancellationTokenSource tokenSource = new CancellationTokenSource(secondDelay * 1000);
+            CancellationTokenSource tokenSource;
+            if (secondDelay > 0) {
+                tokenSource = new CancellationTokenSource(secondDelay * 1000);
+            } else {
+                tokenSource = new CancellationTokenSource();
+            }
             CancellationToken token = tokenSource.Token;
             Task.Factory.StartNew(() => {
                 int total = secondDelay;
                 int count = 0;
                 while (!token.IsCancellationRequested) {
                     try {
-                        this.Invoke((EventHandler)delegate {
-                            this.lblInfo.ForeColor = Color.Black;
-                            if (count == 0) {
-                                this.lblInfo.Text = strMsg + "。。。";
-                            } else {
-                                this.lblInfo.Text = strMsg + "，剩余" + (total - count).ToString() + "秒";
+                        if (secondDelay > 0) {
+                            this.Invoke((EventHandler)delegate {
+                                this.lblInfo.ForeColor = Color.Black;
+                                if (count == 0) {
+                                    this.lblInfo.Text = strMsg + "...";
+                                } else {
+                                    this.lblInfo.Text = strMsg + "，剩余" + (total - count).ToString() + "秒";
+                                }
+                            });
+                        } else {
+                            string progress = "";
+                            switch (count % 4) {
+                            case 0:
+                                progress = "-";
+                                break;
+                            case 1:
+                                progress = "\\";
+                                break;
+                            case 2:
+                                progress = "|";
+                                break;
+                            case 3:
+                                progress = "/";
+                                break;
                             }
-                        });
+                            this.Invoke(new Action(() => {
+                                this.lblInfo.Text = strMsg + "..." + progress;
+                            }));
+                        }
                     } catch (ObjectDisposedException ex) {
                         m_log.TraceWarning(ex.Message);
                     }
-                    Thread.Sleep(1000);
-                    if (total > count) {
+                    if (secondDelay > 0) {
+                        Thread.Sleep(1000);
+                        if (total > count) {
+                            ++count;
+                        }
+                    } else {
                         ++count;
+                        Thread.Sleep(500);
                     }
                 }
             }, token);
@@ -176,19 +220,21 @@ namespace Temperature_Sensor {
             double dAverage2 = 0;
             double dCount1 = 0;
             double dCount2 = 0;
-            switch (m_cfg.Setting.Data.Rule) {
-            case 1:
-                bResult = m_tester.GetResult1(m_dSetup, out dAverage1, out dAverage2);
-                m_log.TraceInfo(string.Format("Get the test result: {0}, average: {1}℃/{2}℃", bResult, dAverage1.ToString("F2"), dAverage2.ToString("F2")));
-                break;
-            case 2:
-                bResult = m_tester.GetResult2(m_dSetup, out dCount1, out dCount2);
-                if (m_cfg.Setting.Data.SuccessiveValue > 1) {
-                    m_log.TraceInfo(string.Format("Get the test result: {0}, count: {1}/{2}", bResult, dCount1.ToString("F0"), dCount2.ToString("F0")));
-                } else {
-                    m_log.TraceInfo(string.Format("Get the test result: {0}, percentage: {1}%/{2}%", bResult, dCount1.ToString("F2"), dCount2.ToString("F2")));
+            if (!m_bLoop) {
+                switch (m_cfg.Setting.Data.Rule) {
+                case 1:
+                    bResult = m_tester.GetResult1(m_dSetup, out dAverage1, out dAverage2);
+                    m_log.TraceInfo(string.Format("Get the test result: {0}, average: {1}℃/{2}℃", bResult, dAverage1.ToString("F2"), dAverage2.ToString("F2")));
+                    break;
+                case 2:
+                    bResult = m_tester.GetResult2(m_dSetup, out dCount1, out dCount2);
+                    if (m_cfg.Setting.Data.SuccessiveValue > 1) {
+                        m_log.TraceInfo(string.Format("Get the test result: {0}, count: {1}/{2}", bResult, dCount1.ToString("F0"), dCount2.ToString("F0")));
+                    } else {
+                        m_log.TraceInfo(string.Format("Get the test result: {0}, percentage: {1}%/{2}%", bResult, dCount1.ToString("F2"), dCount2.ToString("F2")));
+                    }
+                    break;
                 }
-                break;
             }
             string strTimeStamp = m_tester.GetTimeStamp();
             try {
@@ -275,6 +321,7 @@ namespace Temperature_Sensor {
                     }
                 });
             } else {
+                StopLoop();
                 Task.Factory.StartNew(StartTest);
             }
             m_bTesting = false;
@@ -303,7 +350,12 @@ namespace Temperature_Sensor {
         }
 
         private void StartTest() {
-            m_log.TraceInfo(">>>>> Get VIN: " + m_tester.StrVIN + ", Ver: " + MainFileVersion.AssemblyVersion + " <<<<<");
+            if (!m_bLoop) {
+                m_log.TraceInfo(">>>>> Get VIN: " + m_tester.StrVIN + ", Ver: " + MainFileVersion.AssemblyVersion + " <<<<<");
+            } else {
+                m_log.TraceInfo(">>>>> Cycle to get temperature, Ver: " + MainFileVersion.AssemblyVersion + " <<<<<");
+            }
+            m_tester.ClearPoints();
             m_serialRecvBuf = "";
             this.Invoke((EventHandler)delegate {
                 this.lblSurrounding.Text = "--℃";
@@ -315,21 +367,23 @@ namespace Temperature_Sensor {
                 this.lblInfo.Text = "获取环境温度";
             });
             // 获取环境温度
-            string surrounding = GetDisplay(m_tester.GetTemper()[0]);
-            if (double.TryParse(surrounding, out double value)) {
+            m_ctsAmbient = UpdateUITask("获取环境温度", -1);
+            double dAmbient = GetAmbientTemper();
+            m_ctsAmbient.Cancel();
+            if (dAmbient < ERROR_VAL) {
                 if (m_cfg.Setting.Data.SetupValue > 1) {
                     // 绝对值
                     if (m_cfg.Setting.Data.Cooling) {
-                        m_dSetup = value - m_cfg.Setting.Data.SetupValue;
+                        m_dSetup = dAmbient - m_cfg.Setting.Data.SetupValue;
                     } else {
-                        m_dSetup = value + m_cfg.Setting.Data.SetupValue;
+                        m_dSetup = dAmbient + m_cfg.Setting.Data.SetupValue;
                     }
                 } else {
                     // 比率
                     if (m_cfg.Setting.Data.Cooling) {
-                        m_dSetup = value * (1 - m_cfg.Setting.Data.SetupValue);
+                        m_dSetup = dAmbient * (1 - m_cfg.Setting.Data.SetupValue);
                     } else {
-                        m_dSetup = value * (1 + m_cfg.Setting.Data.SetupValue);
+                        m_dSetup = dAmbient * (1 + m_cfg.Setting.Data.SetupValue);
                     }
                 }
                 // 等待开启空调
@@ -339,7 +393,7 @@ namespace Temperature_Sensor {
                     this.lblInfo.Text = "启动车辆，打开空调，开至最大";
                 });
                 if (m_cfg.Setting.Data.UsingRPM && !m_bLoop) {
-                    // 与ELM327并不是保持长连接（从OBD接口上拔下后设备就断电了）
+                    // 与WiFi版ELM327并不是保持长连接（从OBD接口上拔下后设备就断电了）
                     // 故只在每次需要读取引擎转速之前才测试是否连接正常
                     if (!m_obdDll.TestTCP()) {
                         m_OBDInited = false;
@@ -353,7 +407,7 @@ namespace Temperature_Sensor {
                     }
                     if (m_obdDll.InitOBDDll()) {
                         m_OBDInited = true;
-                        CancellationTokenSource tokenSource = UpdateUITask("等待启动车辆，并打开空调至最大", m_cfg.Setting.Data.TotalTime / 2);
+                        m_ctsStartVehicle = UpdateUITask("等待启动车辆，并打开空调至最大", m_cfg.Setting.Data.TotalTime / 2);
                         DateTime before = DateTime.Now;
                         TimeSpan interval;
                         while (m_OBDInited && m_cfg.Setting.Data.IdleRPMMin > GetRPM()) {
@@ -370,7 +424,7 @@ namespace Temperature_Sensor {
                                 return;
                             }
                         }
-                        tokenSource.Cancel();
+                        m_ctsStartVehicle.Cancel();
                     } else {
                         m_OBDInited = false;
                         this.Invoke((EventHandler)delegate {
@@ -383,22 +437,21 @@ namespace Temperature_Sensor {
                     }
                 }
                 // 开始检测
-                m_tester.ClearPoints();
                 m_timerInterval.Enabled = true;
                 m_timerTotal.Enabled = true;
                 m_timerTick.Enabled = false;
                 m_start = DateTime.Now;
                 string[] tempers = m_tester.GetData(m_start, m_dSetup.ToString());
                 this.Invoke((EventHandler)delegate {
-                    this.lblSurrounding.Text = surrounding + "℃";
+                    this.lblSurrounding.Text = dAmbient.ToString("F2") + "℃";
                     this.lblSetup.Text = m_dSetup.ToString("F2") + "℃";
                     this.lblTemper1.Text = GetDisplay(tempers[0]) + "℃";
                     this.lblTemper2.Text = GetDisplay(tempers[1]) + "℃";
                     this.lblInfo.BackColor = this.lblLogo.BackColor;
                     this.lblInfo.ForeColor = this.lblLogo.ForeColor;
-                    UpdateUITask("正在检测", m_cfg.Setting.Data.TotalTime);
                     this.chart1.DataBind();
                 });
+                m_ctsTesting = UpdateUITask("正在检测", m_cfg.Setting.Data.TotalTime);
             } else {
                 this.Invoke((EventHandler)delegate {
                     this.lblInfo.BackColor = this.lblLogo.BackColor;
@@ -406,7 +459,89 @@ namespace Temperature_Sensor {
                     this.lblInfo.Text = "获取环境温度失败";
                 });
                 m_bTesting = false;
+                if (m_bLoop) {
+                    StopLoop();
+                    Task.Factory.StartNew(StartTest);
+                }
             }
+        }
+
+        private void StopLoop() {
+            if (m_ctsAmbient != null) {
+                m_ctsAmbient.Cancel();
+            }
+            if (m_ctsStartVehicle != null) {
+                m_ctsStartVehicle.Cancel();
+            }
+            if (m_ctsTesting != null) {
+                m_ctsTesting.Cancel();
+            }
+            m_timerInterval.Enabled = false;
+            m_timerTotal.Enabled = false;
+            m_timerTick.Enabled = true;
+            DataTable dtTemper = m_tester.GetDtTemper();
+            if (dtTemper.Rows.Count > 1) {
+                string strTimeStamp = m_tester.GetTimeStamp();
+                try {
+                    m_tester.ExportResultFile(false, strTimeStamp);
+                } catch (Exception ex) {
+                    m_log.TraceError("ExportResultFile() ERROR: " + ex.Message);
+                    if (!m_bLoop) {
+                        MessageBox.Show(ex.Message, "ExportResultFile() ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+            m_tester.ClearPoints();
+        }
+
+        private string GetDisplay(string strValue) {
+            bool bMinus = strValue.StartsWith("-");
+            string strRet = strValue.Replace("+", "").Replace("-", "").Trim('0');
+            strRet = bMinus ? "-" + strRet : strRet;
+            return strRet;
+        }
+
+        /// <summary>
+        /// 获取环境温度值，若失败的话返回+9999，否则返回实际温度值
+        /// iChannelIndex - I-7033温度模块的通道索引号，即使用哪一个通道读取环境温度
+        /// iTimes        - 获取温度值失败的话重试次数
+        /// </summary>
+        /// <param name="iChannelIndex"></param>
+        /// <param name="iTimes"></param>
+        /// <returns></returns>
+        private double GetAmbientTemper(int iChannelIndex = 0, int iTimes = 3) {
+            double dRet = ERROR_VAL;
+            for (int i = 0; i < iTimes; i++) {
+                string ambient = GetDisplay(m_tester.GetTemper()[iChannelIndex]);
+                if (double.TryParse(ambient, out double value)) {
+                    dRet = value;
+                    break;
+                }
+                for (int j = 0; j < i + 1; j++) {
+                    Thread.Sleep(1000);
+                }
+            }
+            m_log.TraceInfo(string.Format("GetAmbientTemper: ChannelIndex[{0}], Value[{1}]", iChannelIndex, dRet.ToString("F2")));
+            return dRet;
+        }
+
+        private int GetRPM() {
+            string strRPM = "";
+            try {
+                strRPM = m_obdDll.GetPID0C().First().Value;
+            } catch (Exception ex) {
+                m_log.TraceError("GetRPM() ERROR: " + ex.Message);
+            }
+            if (int.TryParse(strRPM, out int iRet)) {
+                this.Invoke((EventHandler)delegate {
+                    if (iRet > this.pgrBarRPM.Maximum) {
+                        iRet = this.pgrBarRPM.Maximum;
+                    }
+                    this.pgrBarRPM.Value = iRet;
+                    this.lblRPM.Text = iRet.ToString() + "RPM";
+                });
+            }
+            return iRet;
         }
 
         private void Main_Resize(object sender, EventArgs e) {
@@ -450,32 +585,6 @@ namespace Temperature_Sensor {
                     this.txtBoxVIN.SelectAll();
                 }
             }
-        }
-
-        private string GetDisplay(string strValue) {
-            bool bMinus = strValue.StartsWith("-");
-            string strRet = strValue.Replace("+", "").Replace("-", "").Trim('0');
-            strRet = bMinus ? "-" + strRet : strRet;
-            return strRet;
-        }
-
-        private int GetRPM() {
-            string strRPM = "";
-            try {
-                strRPM = m_obdDll.GetPID0C().First().Value;
-            } catch (Exception ex) {
-                m_log.TraceError("GetRPM() ERROR: " + ex.Message);
-            }
-            if (int.TryParse(strRPM, out int iRet)) {
-                this.Invoke((EventHandler)delegate {
-                    if (iRet > this.pgrBarRPM.Maximum) {
-                        iRet = this.pgrBarRPM.Maximum;
-                    }
-                    this.pgrBarRPM.Value = iRet;
-                    this.lblRPM.Text = iRet.ToString() + "RPM";
-                });
-            }
-            return iRet;
         }
 
         private void Main_Load(object sender, EventArgs e) {
@@ -556,8 +665,16 @@ namespace Temperature_Sensor {
         }
 
         private void MenuItemLoop_Click(object sender, EventArgs e) {
+            StopLoop();
             m_bLoop = true;
             Task.Factory.StartNew(StartTest);
+        }
+
+        private void MenuItemStopLoop_Click(object sender, EventArgs e) {
+            m_log.TraceInfo("Stop cycling to get temperature");
+            StopLoop();
+            m_bLoop = false;
+            this.lblInfo.Text = "已停止持续测温";
         }
     }
 
