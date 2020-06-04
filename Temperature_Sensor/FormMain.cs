@@ -27,8 +27,7 @@ namespace Temperature_Sensor {
         private readonly OBDDll m_obdDll;
         private string m_serialRecvBuf;
         private readonly System.Timers.Timer m_timerInterval;
-        private readonly System.Timers.Timer m_timerTotal;
-        readonly System.Timers.Timer m_timerTick;
+        private readonly System.Timers.Timer m_timerTick;
         private DateTime m_start;
         private double m_dSetup;
         private bool m_bLastStatus;
@@ -36,6 +35,8 @@ namespace Temperature_Sensor {
         private int m_counterFailed;
         private bool m_bLoop; // 是否需要持续测温，用于调试
         private bool m_OBDInited;
+        private int m_inFinishing; // 值为1表示正在执行收尾动作（例如保存测试数据等），值为0表示未执行收尾动作
+        private int m_totalPoint; // 一个测温循环需要的总点数
         private CancellationTokenSource m_ctsAmbient;
         private CancellationTokenSource m_ctsStartVehicle;
         private CancellationTokenSource m_ctsTesting;
@@ -50,6 +51,7 @@ namespace Temperature_Sensor {
             m_counterFailed = 0;
             m_bLoop = false;
             m_OBDInited = false;
+            m_inFinishing = 0;
             this.Text = Properties.Resources.MainTitle + " Ver: " + MainFileVersion.AssemblyVersion;
             m_log = new BaseLib.Logger(".\\log\\Temper", BaseLib.EnumLogLevel.LogLevelAll, true, 100);
             m_log.TraceInfo("==================================================================");
@@ -87,10 +89,6 @@ namespace Temperature_Sensor {
             m_timerInterval.Elapsed += new System.Timers.ElapsedEventHandler(OnTimeInterval);
             m_timerInterval.AutoReset = true;
             m_timerInterval.Enabled = false;
-            m_timerTotal = new System.Timers.Timer(m_cfg.Setting.Data.TotalTime * 1000 + m_cfg.Setting.Data.Interval);
-            m_timerTotal.Elapsed += new System.Timers.ElapsedEventHandler(OnTimeTotal);
-            m_timerTotal.AutoReset = true;
-            m_timerTotal.Enabled = false;
             m_timerTick = new System.Timers.Timer(m_cfg.Setting.Data.Interval); // 心跳间隔同采样间隔一致
             m_timerTick.Elapsed += new System.Timers.ElapsedEventHandler(OnTimeTick);
             m_timerTick.AutoReset = true;
@@ -195,25 +193,45 @@ namespace Temperature_Sensor {
         }
 
         private void OnTimeInterval(object source, System.Timers.ElapsedEventArgs e) {
-            m_timerTick.Enabled = false;
-            string[] tempers = m_tester.GetData(m_start, m_dSetup.ToString());
-            try {
-                if (m_cfg.Setting.Data.UsingRPM && !m_bLoop) {
-                    GetRPM();
+            if (m_totalPoint > 0) {
+                m_timerTick.Enabled = false;
+                string[] tempers;
+                lock (m_lockObj) {
+                    tempers = m_tester.GetData(m_start, m_dSetup.ToString());
+                    bool bStatus = false;
+                    foreach (string temper in tempers) {
+                        bStatus = bStatus || temper.Length != 0;
+                    }
+                    SetConnectStatus(bStatus);
                 }
-                this.Invoke((EventHandler)delegate {
-                    this.chart1.DataBind();
-                    this.lblTemper1.Text = GetDisplay(tempers[0]) + "℃";
-                    this.lblTemper2.Text = GetDisplay(tempers[1]) + "℃";
-                });
-            } catch (ObjectDisposedException ex) {
-                m_log.TraceWarning(ex.Message);
+                try {
+                    if (m_cfg.Setting.Data.UsingRPM && !m_bLoop) {
+                        GetRPM();
+                    }
+                    this.Invoke((EventHandler)delegate {
+                        this.chart1.DataBind();
+                        this.lblTemper1.Text = GetDisplay(tempers[0]) + "℃";
+                        this.lblTemper2.Text = GetDisplay(tempers[1]) + "℃";
+                    });
+                } catch (ObjectDisposedException ex) {
+                    m_log.TraceWarning(ex.Message);
+                }
+                --m_totalPoint;
+            } else {
+                // 如果“m_inFinishing == 0”则表示没有线程正在执行FinishTest()
+                // 可以安全进入并执行该函数，否则不执行，保证线程安全
+                if (Interlocked.Exchange(ref m_inFinishing, 1) == 0) {
+                    FinishTest();
+                    // 延时一个采样间隔时间，保证定时器结束后不会有已进入线程池的Elapsed事件处理函数有重入
+                    Thread.Sleep(m_cfg.Setting.Data.Interval);
+                    // 执行完后将m_inFinishing置0
+                    Interlocked.Exchange(ref m_inFinishing, 0);
+                }
             }
         }
 
-        private void OnTimeTotal(object source, System.Timers.ElapsedEventArgs e) {
+        private void FinishTest() {
             m_timerInterval.Enabled = false;
-            m_timerTotal.Enabled = false;
             m_timerTick.Enabled = true;
             bool bResult = false;
             double dAverage1 = 0;
@@ -327,25 +345,29 @@ namespace Temperature_Sensor {
             m_bTesting = false;
         }
 
+        private void SetConnectStatus(bool bStatus) {
+            if (m_bLastStatus != bStatus) {
+                if (bStatus) {
+                    this.Invoke((EventHandler)delegate {
+                        this.lblStatus1.BackColor = Color.GreenYellow;
+                        this.lblStatus2.BackColor = Color.GreenYellow;
+                        this.lblStatus2.Text = "已连接";
+                    });
+                } else {
+                    this.Invoke((EventHandler)delegate {
+                        this.lblStatus1.BackColor = Color.Red;
+                        this.lblStatus2.BackColor = Color.Red;
+                        this.lblStatus2.Text = "连接异常";
+                    });
+                }
+            }
+            m_bLastStatus = bStatus;
+        }
+
         private void OnTimeTick(object source, System.Timers.ElapsedEventArgs e) {
             lock (m_lockObj) {
                 bool bStatus = m_tester.SafeTestConnect(1);
-                if (m_bLastStatus != bStatus) {
-                    if (bStatus) {
-                        this.Invoke((EventHandler)delegate {
-                            this.lblStatus1.BackColor = Color.GreenYellow;
-                            this.lblStatus2.BackColor = Color.GreenYellow;
-                            this.lblStatus2.Text = "已连接";
-                        });
-                    } else {
-                        this.Invoke((EventHandler)delegate {
-                            this.lblStatus1.BackColor = Color.Red;
-                            this.lblStatus2.BackColor = Color.Red;
-                            this.lblStatus2.Text = "连接异常";
-                        });
-                    }
-                }
-                m_bLastStatus = bStatus;
+                SetConnectStatus(bStatus);
             }
         }
 
@@ -357,6 +379,7 @@ namespace Temperature_Sensor {
             }
             m_tester.ClearPoints();
             m_serialRecvBuf = "";
+            m_totalPoint = m_cfg.Setting.Data.TotalTime * 1000 / m_cfg.Setting.Data.Interval;
             this.Invoke((EventHandler)delegate {
                 this.lblSurrounding.Text = "--℃";
                 this.lblSetup.Text = "--℃";
@@ -438,7 +461,6 @@ namespace Temperature_Sensor {
                 }
                 // 开始检测
                 m_timerInterval.Enabled = true;
-                m_timerTotal.Enabled = true;
                 m_timerTick.Enabled = false;
                 m_start = DateTime.Now;
                 string[] tempers = m_tester.GetData(m_start, m_dSetup.ToString());
@@ -453,6 +475,7 @@ namespace Temperature_Sensor {
                 });
                 m_ctsTesting = UpdateUITask("正在检测", m_cfg.Setting.Data.TotalTime);
             } else {
+                SetConnectStatus(false);
                 this.Invoke((EventHandler)delegate {
                     this.lblInfo.BackColor = this.lblLogo.BackColor;
                     this.lblInfo.ForeColor = Color.Red;
@@ -477,7 +500,6 @@ namespace Temperature_Sensor {
                 m_ctsTesting.Cancel();
             }
             m_timerInterval.Enabled = false;
-            m_timerTotal.Enabled = false;
             m_timerTick.Enabled = true;
             DataTable dtTemper = m_tester.GetDtTemper();
             if (dtTemper.Rows.Count > 1) {
@@ -512,14 +534,13 @@ namespace Temperature_Sensor {
         private double GetAmbientTemper(int iChannelIndex = 0, int iTimes = 3) {
             double dRet = ERROR_VAL;
             for (int i = 0; i < iTimes; i++) {
+                m_log.TraceInfo(string.Format("Getting ambient temperature {0} time(s)", i + 1));
                 string ambient = GetDisplay(m_tester.GetTemper()[iChannelIndex]);
                 if (double.TryParse(ambient, out double value)) {
                     dRet = value;
                     break;
                 }
-                for (int j = 0; j < i + 1; j++) {
-                    Thread.Sleep(1000);
-                }
+                Thread.Sleep(1000);
             }
             m_log.TraceInfo(string.Format("GetAmbientTemper: ChannelIndex[{0}], Value[{1}]", iChannelIndex, dRet.ToString("F2")));
             return dRet;
@@ -651,10 +672,8 @@ namespace Temperature_Sensor {
                 m_sp.ClosePort();
             }
             m_timerInterval.Enabled = false;
-            m_timerTotal.Enabled = false;
             m_timerTick.Enabled = false;
             m_timerInterval.Dispose();
-            m_timerTotal.Dispose();
             m_timerTick.Dispose();
         }
 

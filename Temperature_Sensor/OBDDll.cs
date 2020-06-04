@@ -72,7 +72,7 @@ namespace Temperature_Sensor {
 
         public bool TestTCP() {
             if (m_obd.OBDif.CommSettings.ComPort > 0) {
-                return true;
+                return false;
             }
             return m_obd.TestTCP();
         }

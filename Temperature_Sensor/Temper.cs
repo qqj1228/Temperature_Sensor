@@ -43,6 +43,10 @@ namespace Temperature_Sensor {
         }
 
         ~Temper() {
+            SafeClose();
+        }
+
+        private void SafeClose() {
             if (m_clientStream != null) {
                 m_clientStream.Close();
             }
@@ -113,23 +117,25 @@ namespace Temperature_Sensor {
         /// 以string[]格式返回，[通道0, 通道1]
         /// </summary>
         public string[] GetTemper() {
-            DateTime before = DateTime.Now;
-            TimeSpan interval;
-
             // 获取当前连接状态
             bool bConnected = TestConnect();
-            // 发送读取温度命令
+            // 若断线的话重连
             if (!bConnected) {
+                SafeClose();
                 bConnected = TCPClientInit();
                 if (!bConnected) {
                     return SplitTemper("");
                 }
             }
+
+            DateTime before = DateTime.Now;
+            TimeSpan interval;
+
+            // 发送读取温度命令
             string strMsg = "#01\r";
             byte[] sendMsg = Encoding.ASCII.GetBytes(strMsg);
             try {
                 m_clientStream.Write(sendMsg, 0, sendMsg.Length);
-                m_clientStream.Flush();
                 m_log.TraceInfo("TcpClient sent: " + strMsg.Replace("\r", "\\r"));
             } catch (Exception ex) {
                 m_log.TraceError("TcpClient sending error: " + ex.Message);
@@ -236,6 +242,7 @@ namespace Temperature_Sensor {
                 bRet = bRet || TestConnect();
             }
             for (int i = 0; i < times && !bRet; i++) {
+                SafeClose();
                 bRet = TCPClientInit(false);
             }
             return bRet;

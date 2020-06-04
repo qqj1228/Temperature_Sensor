@@ -42,8 +42,9 @@
       <HintPath>..\packages\EPPlus.4.5.3.3\lib\net40\EPPlus.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
-    <Reference Include="SH_OBD_DLL">
-      <HintPath>bin\Debug\SH_OBD_DLL.dll</HintPath>
+    <Reference Include="SH_OBD_DLL, Version=2020.6.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>SH_OBD_DLL\SH_OBD_DLL.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
@@ -116,6 +117,8 @@
   <ItemGroup>
     <Content Include="asset\logo.ico" />
     <Content Include="logo.ico" />
+    <Content Include="SH_OBD_DLL\SH_OBD_DLL.dll" />
+    <Content Include="SH_OBD_DLL\SH_OBD_DLL.pdb" />
     <None Include="asset\logo.png" />
     <Content Include="Configs\Setting.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
