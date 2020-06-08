@@ -340,6 +340,7 @@ namespace Temperature_Sensor {
                 // 保存文件
                 FileInfo xlFile = new FileInfo(ExportPath);
                 package.SaveAs(xlFile);
+                m_log.TraceInfo("Exported result file: " + StrVIN + "_" + strTimeStamp + ".xlsx");
             }
         }
 

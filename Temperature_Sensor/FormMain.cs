@@ -339,7 +339,7 @@ namespace Temperature_Sensor {
                     }
                 });
             } else {
-                StopLoop();
+                StopLoop(false);
                 Task.Factory.StartNew(StartTest);
             }
             m_bTesting = false;
@@ -483,13 +483,13 @@ namespace Temperature_Sensor {
                 });
                 m_bTesting = false;
                 if (m_bLoop) {
-                    StopLoop();
+                    StopLoop(false);
                     Task.Factory.StartNew(StartTest);
                 }
             }
         }
 
-        private void StopLoop() {
+        private void StopLoop(bool bExportResultFile) {
             if (m_ctsAmbient != null) {
                 m_ctsAmbient.Cancel();
             }
@@ -502,7 +502,7 @@ namespace Temperature_Sensor {
             m_timerInterval.Enabled = false;
             m_timerTick.Enabled = true;
             DataTable dtTemper = m_tester.GetDtTemper();
-            if (dtTemper.Rows.Count > 1) {
+            if (bExportResultFile && dtTemper.Rows.Count > 1) {
                 string strTimeStamp = m_tester.GetTimeStamp();
                 try {
                     m_tester.ExportResultFile(false, strTimeStamp);
@@ -684,14 +684,14 @@ namespace Temperature_Sensor {
         }
 
         private void MenuItemLoop_Click(object sender, EventArgs e) {
-            StopLoop();
+            StopLoop(true);
             m_bLoop = true;
             Task.Factory.StartNew(StartTest);
         }
 
         private void MenuItemStopLoop_Click(object sender, EventArgs e) {
             m_log.TraceInfo("Stop cycling to get temperature");
-            StopLoop();
+            StopLoop(true);
             m_bLoop = false;
             this.lblInfo.Text = "已停止持续测温";
         }
