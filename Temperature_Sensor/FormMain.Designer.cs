@@ -55,6 +55,7 @@
             this.pgrBarRPM = new Temperature_Sensor.VerticalProgressBar();
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.MenuItemStatistics = new System.Windows.Forms.ToolStripMenuItem();
+            this.MenuItemSetup = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.MenuItemLoop = new System.Windows.Forms.ToolStripMenuItem();
             this.MenuItemStopLoop = new System.Windows.Forms.ToolStripMenuItem();
@@ -227,8 +228,8 @@
             // tblLayoutValue
             // 
             this.tblLayoutValue.ColumnCount = 2;
-            this.tblLayoutValue.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 55F));
-            this.tblLayoutValue.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 45F));
+            this.tblLayoutValue.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tblLayoutValue.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 0F));
             this.tblLayoutValue.Controls.Add(this.grpBoxMode, 0, 4);
             this.tblLayoutValue.Controls.Add(this.grpBoxTemper2, 0, 3);
             this.tblLayoutValue.Controls.Add(this.grpBoxTemper1, 0, 2);
@@ -253,7 +254,7 @@
             this.grpBoxMode.Dock = System.Windows.Forms.DockStyle.Fill;
             this.grpBoxMode.Location = new System.Drawing.Point(3, 235);
             this.grpBoxMode.Name = "grpBoxMode";
-            this.grpBoxMode.Size = new System.Drawing.Size(89, 53);
+            this.grpBoxMode.Size = new System.Drawing.Size(168, 53);
             this.grpBoxMode.TabIndex = 4;
             this.grpBoxMode.TabStop = false;
             this.grpBoxMode.Text = "空调模式";
@@ -264,7 +265,7 @@
             this.lblMode.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.lblMode.Location = new System.Drawing.Point(3, 17);
             this.lblMode.Name = "lblMode";
-            this.lblMode.Size = new System.Drawing.Size(83, 33);
+            this.lblMode.Size = new System.Drawing.Size(162, 33);
             this.lblMode.TabIndex = 0;
             this.lblMode.Text = "制冷";
             this.lblMode.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -275,7 +276,7 @@
             this.grpBoxTemper2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.grpBoxTemper2.Location = new System.Drawing.Point(3, 177);
             this.grpBoxTemper2.Name = "grpBoxTemper2";
-            this.grpBoxTemper2.Size = new System.Drawing.Size(89, 52);
+            this.grpBoxTemper2.Size = new System.Drawing.Size(168, 52);
             this.grpBoxTemper2.TabIndex = 3;
             this.grpBoxTemper2.TabStop = false;
             this.grpBoxTemper2.Text = "空调温度2";
@@ -286,7 +287,7 @@
             this.lblTemper2.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.lblTemper2.Location = new System.Drawing.Point(3, 17);
             this.lblTemper2.Name = "lblTemper2";
-            this.lblTemper2.Size = new System.Drawing.Size(83, 32);
+            this.lblTemper2.Size = new System.Drawing.Size(162, 32);
             this.lblTemper2.TabIndex = 0;
             this.lblTemper2.Text = "20℃";
             this.lblTemper2.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -297,7 +298,7 @@
             this.grpBoxTemper1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.grpBoxTemper1.Location = new System.Drawing.Point(3, 119);
             this.grpBoxTemper1.Name = "grpBoxTemper1";
-            this.grpBoxTemper1.Size = new System.Drawing.Size(89, 52);
+            this.grpBoxTemper1.Size = new System.Drawing.Size(168, 52);
             this.grpBoxTemper1.TabIndex = 2;
             this.grpBoxTemper1.TabStop = false;
             this.grpBoxTemper1.Text = "空调温度1";
@@ -308,7 +309,7 @@
             this.lblTemper1.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.lblTemper1.Location = new System.Drawing.Point(3, 17);
             this.lblTemper1.Name = "lblTemper1";
-            this.lblTemper1.Size = new System.Drawing.Size(83, 32);
+            this.lblTemper1.Size = new System.Drawing.Size(162, 32);
             this.lblTemper1.TabIndex = 0;
             this.lblTemper1.Text = "20℃";
             this.lblTemper1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -319,7 +320,7 @@
             this.grpBoxSetup.Dock = System.Windows.Forms.DockStyle.Fill;
             this.grpBoxSetup.Location = new System.Drawing.Point(3, 61);
             this.grpBoxSetup.Name = "grpBoxSetup";
-            this.grpBoxSetup.Size = new System.Drawing.Size(89, 52);
+            this.grpBoxSetup.Size = new System.Drawing.Size(168, 52);
             this.grpBoxSetup.TabIndex = 1;
             this.grpBoxSetup.TabStop = false;
             this.grpBoxSetup.Text = "设定温度";
@@ -330,7 +331,7 @@
             this.lblSetup.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.lblSetup.Location = new System.Drawing.Point(3, 17);
             this.lblSetup.Name = "lblSetup";
-            this.lblSetup.Size = new System.Drawing.Size(83, 32);
+            this.lblSetup.Size = new System.Drawing.Size(162, 32);
             this.lblSetup.TabIndex = 0;
             this.lblSetup.Text = "20℃";
             this.lblSetup.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -341,7 +342,7 @@
             this.grpBoxSurrounding.Dock = System.Windows.Forms.DockStyle.Fill;
             this.grpBoxSurrounding.Location = new System.Drawing.Point(3, 3);
             this.grpBoxSurrounding.Name = "grpBoxSurrounding";
-            this.grpBoxSurrounding.Size = new System.Drawing.Size(89, 52);
+            this.grpBoxSurrounding.Size = new System.Drawing.Size(168, 52);
             this.grpBoxSurrounding.TabIndex = 0;
             this.grpBoxSurrounding.TabStop = false;
             this.grpBoxSurrounding.Text = "环境温度";
@@ -352,7 +353,7 @@
             this.lblSurrounding.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.lblSurrounding.Location = new System.Drawing.Point(3, 17);
             this.lblSurrounding.Name = "lblSurrounding";
-            this.lblSurrounding.Size = new System.Drawing.Size(83, 32);
+            this.lblSurrounding.Size = new System.Drawing.Size(162, 32);
             this.lblSurrounding.TabIndex = 0;
             this.lblSurrounding.Text = "20℃";
             this.lblSurrounding.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -361,10 +362,10 @@
             // 
             this.grpBoxRPM.Controls.Add(this.tblLayoutRPM);
             this.grpBoxRPM.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.grpBoxRPM.Location = new System.Drawing.Point(98, 3);
+            this.grpBoxRPM.Location = new System.Drawing.Point(177, 3);
             this.grpBoxRPM.Name = "grpBoxRPM";
             this.tblLayoutValue.SetRowSpan(this.grpBoxRPM, 5);
-            this.grpBoxRPM.Size = new System.Drawing.Size(73, 285);
+            this.grpBoxRPM.Size = new System.Drawing.Size(1, 285);
             this.grpBoxRPM.TabIndex = 5;
             this.grpBoxRPM.TabStop = false;
             this.grpBoxRPM.Text = "引擎转速";
@@ -383,7 +384,7 @@
             this.tblLayoutRPM.RowCount = 2;
             this.tblLayoutRPM.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 92F));
             this.tblLayoutRPM.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 8F));
-            this.tblLayoutRPM.Size = new System.Drawing.Size(67, 265);
+            this.tblLayoutRPM.Size = new System.Drawing.Size(0, 265);
             this.tblLayoutRPM.TabIndex = 1;
             // 
             // lblRPM
@@ -393,7 +394,7 @@
             this.lblRPM.Font = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.lblRPM.Location = new System.Drawing.Point(3, 243);
             this.lblRPM.Name = "lblRPM";
-            this.lblRPM.Size = new System.Drawing.Size(61, 22);
+            this.lblRPM.Size = new System.Drawing.Size(1, 22);
             this.lblRPM.TabIndex = 1;
             this.lblRPM.Text = "9999RPM";
             this.lblRPM.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -401,7 +402,7 @@
             // pgrBarRPM
             // 
             this.pgrBarRPM.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pgrBarRPM.Location = new System.Drawing.Point(21, 3);
+            this.pgrBarRPM.Location = new System.Drawing.Point(-11, 3);
             this.pgrBarRPM.Maximum = 5000;
             this.pgrBarRPM.Name = "pgrBarRPM";
             this.pgrBarRPM.Size = new System.Drawing.Size(24, 237);
@@ -412,35 +413,43 @@
             // 
             this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.MenuItemStatistics,
+            this.MenuItemSetup,
             this.toolStripSeparator1,
             this.MenuItemLoop,
             this.MenuItemStopLoop});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(181, 98);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(164, 98);
             // 
             // MenuItemStatistics
             // 
             this.MenuItemStatistics.Name = "MenuItemStatistics";
-            this.MenuItemStatistics.Size = new System.Drawing.Size(180, 22);
+            this.MenuItemStatistics.Size = new System.Drawing.Size(163, 22);
             this.MenuItemStatistics.Text = "统计信息...(&S)";
             this.MenuItemStatistics.Click += new System.EventHandler(this.MenuItemStatistics_Click);
+            // 
+            // MenuItemSetup
+            // 
+            this.MenuItemSetup.Name = "MenuItemSetup";
+            this.MenuItemSetup.Size = new System.Drawing.Size(163, 22);
+            this.MenuItemSetup.Text = "温度设定...(&T)";
+            this.MenuItemSetup.Click += new System.EventHandler(this.MenuItemSetup_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(177, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(160, 6);
             // 
             // MenuItemLoop
             // 
             this.MenuItemLoop.Name = "MenuItemLoop";
-            this.MenuItemLoop.Size = new System.Drawing.Size(180, 22);
+            this.MenuItemLoop.Size = new System.Drawing.Size(163, 22);
             this.MenuItemLoop.Text = "持续测温(&L)";
             this.MenuItemLoop.Click += new System.EventHandler(this.MenuItemLoop_Click);
             // 
             // MenuItemStopLoop
             // 
             this.MenuItemStopLoop.Name = "MenuItemStopLoop";
-            this.MenuItemStopLoop.Size = new System.Drawing.Size(180, 22);
+            this.MenuItemStopLoop.Size = new System.Drawing.Size(163, 22);
             this.MenuItemStopLoop.Text = "停止持续测温(&P)";
             this.MenuItemStopLoop.Click += new System.EventHandler(this.MenuItemStopLoop_Click);
             // 
@@ -507,6 +516,7 @@
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
         private System.Windows.Forms.ToolStripMenuItem MenuItemLoop;
         private System.Windows.Forms.ToolStripMenuItem MenuItemStopLoop;
+        private System.Windows.Forms.ToolStripMenuItem MenuItemSetup;
     }
 }
 

@@ -217,5 +217,15 @@ namespace BaseLib {
             return Convert.ToInt32(QueryOne(strSQL));
         }
 
+        public string GetPassWord() {
+            string strSQL = "select PassWord from TemperUser where UserName = 'admin'";
+            return QueryOne(strSQL).ToString();
+        }
+
+        public int SetPassWord(string strPwd) {
+            string strSQL = "update TemperUser set PassWord = '" + strPwd + "' where UserName = 'admin'";
+            return ExecuteNonQuery(strSQL);
+        }
+
     }
 }

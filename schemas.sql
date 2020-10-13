@@ -5,7 +5,25 @@ GO
 USE TemperSensor
 GO
 
--- 测温过程库
+-- 用户信息表
+IF OBJECT_ID(N'TemperSensor.dbo.TemperUser') IS NOT NULL
+    DROP TABLE TemperSensor.dbo.TemperUser
+GO
+CREATE TABLE TemperSensor.dbo.TemperUser(
+    ID int IDENTITY PRIMARY KEY NOT NULL, -- ID, 自增, 主键
+    UserName varchar(20) NOT NULL, -- 用户名
+    PassWord varchar(32) NOT NULL, -- 密码
+)
+GO
+-- 插入默认密码
+INSERT TemperSensor.dbo.TemperUser
+    VALUES (
+        'admin',
+        '81DC9BDB52D04DC20036DBD8313ED055' -- 默认密码1234
+    )
+GO
+
+-- 测温过程表
 IF OBJECT_ID(N'TemperSensor.dbo.TemperData') IS NOT NULL
     DROP TABLE TemperSensor.dbo.TemperData
 GO
@@ -22,7 +40,7 @@ CREATE TABLE TemperSensor.dbo.TemperData(
 )
 GO
 
--- 测温结果库
+-- 测温结果表
 IF OBJECT_ID(N'TemperSensor.dbo.TemperResult') IS NOT NULL
     DROP TABLE TemperSensor.dbo.TemperResult
 GO

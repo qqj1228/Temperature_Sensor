@@ -28,6 +28,9 @@ namespace Temperature_Sensor {
         private string m_serialRecvBuf;
         private readonly System.Timers.Timer m_timerInterval;
         private readonly System.Timers.Timer m_timerTick;
+        private readonly System.Timers.Timer m_timerBlink;
+        private bool m_bBlink;
+        private string m_strInfo;
         private DateTime m_start;
         private double m_dSetup;
         private bool m_bLastStatus;
@@ -47,6 +50,7 @@ namespace Temperature_Sensor {
             m_lastHeight = this.Height;
             m_serialRecvBuf = "";
             m_bLastStatus = false;
+            m_bBlink = false;
             m_lockObj = new object();
             m_counterFailed = 0;
             m_bLoop = false;
@@ -93,6 +97,10 @@ namespace Temperature_Sensor {
             m_timerTick.Elapsed += new System.Timers.ElapsedEventHandler(OnTimeTick);
             m_timerTick.AutoReset = true;
             m_timerTick.Enabled = true;
+            m_timerBlink = new System.Timers.Timer(m_cfg.Setting.Data.Interval); // 闪烁间隔同采样间隔一致
+            m_timerBlink.Elapsed += new System.Timers.ElapsedEventHandler(OnTimeBlink);
+            m_timerBlink.AutoReset = true;
+            m_timerBlink.Enabled = true;
         }
 
         void SerialDataReceived(object sender, SerialDataReceivedEventArgs e, byte[] bits) {
@@ -147,8 +155,10 @@ namespace Temperature_Sensor {
                                 this.lblInfo.ForeColor = Color.Black;
                                 if (count == 0) {
                                     this.lblInfo.Text = strMsg + "...";
+                                    m_strInfo = this.lblInfo.Text;
                                 } else {
                                     this.lblInfo.Text = strMsg + "，剩余" + (total - count).ToString() + "秒";
+                                    m_strInfo = this.lblInfo.Text;
                                 }
                             });
                         } else {
@@ -169,6 +179,7 @@ namespace Temperature_Sensor {
                             }
                             this.Invoke(new Action(() => {
                                 this.lblInfo.Text = strMsg + "..." + progress;
+                                m_strInfo = this.lblInfo.Text;
                             }));
                         }
                     } catch (ObjectDisposedException ex) {
@@ -257,6 +268,7 @@ namespace Temperature_Sensor {
             string strTimeStamp = m_tester.GetTimeStamp();
             try {
                 m_tester.ExportResultFile(bResult, strTimeStamp);
+                m_bBlink = !bResult;
             } catch (Exception ex) {
                 m_log.TraceError("ExportResultFile() ERROR: " + ex.Message);
                 if (!m_bLoop) {
@@ -303,6 +315,7 @@ namespace Temperature_Sensor {
                     case 2:
                         this.lblInfo.Text += ", 连续合格温度点";
                         if (m_cfg.Setting.Data.SuccessiveValue > 1) {
+                            this.lblInfo.Text += "(" + m_cfg.Setting.Data.SuccessiveValue.ToString("F0") + ")";
                             // 绝对值
                             switch (m_cfg.Setting.Data.Temper) {
                             case 0:
@@ -316,6 +329,7 @@ namespace Temperature_Sensor {
                                 break;
                             }
                         } else {
+                            this.lblInfo.Text += "(" + (m_cfg.Setting.Data.SuccessiveValue * 100).ToString("F2") + "%)";
                             // 比率
                             switch (m_cfg.Setting.Data.Temper) {
                             case 0:
@@ -337,6 +351,7 @@ namespace Temperature_Sensor {
                         this.lblInfo.BackColor = Color.Red;
                         this.lblInfo.ForeColor = Color.White;
                     }
+                    m_strInfo = this.lblInfo.Text;
                 });
             } else {
                 StopLoop(false);
@@ -371,6 +386,18 @@ namespace Temperature_Sensor {
             }
         }
 
+        private void OnTimeBlink(object source, System.Timers.ElapsedEventArgs e) {
+            if (m_timerBlink != null && m_timerBlink.Enabled) {
+                this.Invoke((EventHandler)delegate {
+                    if (m_bBlink && lblInfo.Text.Length > 0) {
+                        lblInfo.Text = string.Empty;
+                    } else {
+                        lblInfo.Text = m_strInfo;
+                    }
+                });
+            }
+        }
+
         private void StartTest() {
             if (!m_bLoop) {
                 m_log.TraceInfo(">>>>> Get VIN: " + m_tester.StrVIN + ", Ver: " + MainFileVersion.AssemblyVersion + " <<<<<");
@@ -378,6 +405,7 @@ namespace Temperature_Sensor {
                 m_log.TraceInfo(">>>>> Cycle to get temperature, Ver: " + MainFileVersion.AssemblyVersion + " <<<<<");
             }
             m_tester.ClearPoints();
+            m_bBlink = false;
             m_serialRecvBuf = "";
             m_totalPoint = m_cfg.Setting.Data.TotalTime * 1000 / m_cfg.Setting.Data.Interval;
             this.Invoke((EventHandler)delegate {
@@ -388,6 +416,7 @@ namespace Temperature_Sensor {
                 this.lblInfo.BackColor = this.lblLogo.BackColor;
                 this.lblInfo.ForeColor = this.lblLogo.ForeColor;
                 this.lblInfo.Text = "获取环境温度";
+                m_strInfo = this.lblInfo.Text;
             });
             // 获取环境温度
             m_ctsAmbient = UpdateUITask("获取环境温度", -1);
@@ -414,6 +443,7 @@ namespace Temperature_Sensor {
                     this.lblInfo.BackColor = this.lblLogo.BackColor;
                     this.lblInfo.ForeColor = this.lblLogo.ForeColor;
                     this.lblInfo.Text = "启动车辆，打开空调，开至最大";
+                    m_strInfo = this.lblInfo.Text;
                 });
                 if (m_cfg.Setting.Data.UsingRPM && !m_bLoop) {
                     // 与WiFi版ELM327并不是保持长连接（从OBD接口上拔下后设备就断电了）
@@ -424,6 +454,7 @@ namespace Temperature_Sensor {
                             this.lblInfo.BackColor = this.lblLogo.BackColor;
                             this.lblInfo.ForeColor = Color.Red;
                             this.lblInfo.Text = "与VCI设备的无线连接发生异常！";
+                            m_strInfo = this.lblInfo.Text;
                         });
                         m_bTesting = false;
                         return;
@@ -442,6 +473,7 @@ namespace Temperature_Sensor {
                                     this.lblInfo.BackColor = this.lblLogo.BackColor;
                                     this.lblInfo.ForeColor = Color.Red;
                                     this.lblInfo.Text = "等待启动车辆超时！";
+                                    m_strInfo = this.lblInfo.Text;
                                 });
                                 m_bTesting = false;
                                 return;
@@ -454,6 +486,7 @@ namespace Temperature_Sensor {
                             this.lblInfo.BackColor = this.lblLogo.BackColor;
                             this.lblInfo.ForeColor = Color.Red;
                             this.lblInfo.Text = "无法连接车辆OBD！";
+                            m_strInfo = this.lblInfo.Text;
                         });
                         m_bTesting = false;
                         return;
@@ -480,6 +513,7 @@ namespace Temperature_Sensor {
                     this.lblInfo.BackColor = this.lblLogo.BackColor;
                     this.lblInfo.ForeColor = Color.Red;
                     this.lblInfo.Text = "获取环境温度失败";
+                    m_strInfo = this.lblInfo.Text;
                 });
                 m_bTesting = false;
                 if (m_bLoop) {
@@ -665,6 +699,7 @@ namespace Temperature_Sensor {
             }
             this.lblRPM.Text = "0RPM";
             this.pgrBarRPM.Maximum = m_cfg.Setting.Data.IdleRPMMin * 10;
+            m_strInfo = this.lblInfo.Text;
         }
 
         private void Main_FormClosing(object sender, FormClosingEventArgs e) {
@@ -673,8 +708,10 @@ namespace Temperature_Sensor {
             }
             m_timerInterval.Enabled = false;
             m_timerTick.Enabled = false;
+            m_timerBlink.Enabled = false;
             m_timerInterval.Dispose();
             m_timerTick.Dispose();
+            m_timerBlink.Dispose();
         }
 
         private void MenuItemStatistics_Click(object sender, EventArgs e) {
@@ -694,6 +731,23 @@ namespace Temperature_Sensor {
             StopLoop(true);
             m_bLoop = false;
             this.lblInfo.Text = "已停止持续测温";
+            m_strInfo = this.lblInfo.Text;
+        }
+
+        private void MenuItemSetup_Click(object sender, EventArgs e) {
+            FormPwd formPwd = new FormPwd(m_db);
+            formPwd.ShowDialog();
+            if (formPwd.DialogResult == DialogResult.Yes) {
+                FormSetup form = new FormSetup(m_cfg, m_db);
+                form.ShowDialog();
+                form.Dispose();
+            } else if (formPwd.DialogResult == DialogResult.No) {
+                MessageBox.Show("密码错误！", "拒绝访问", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                this.txtBoxVIN.Focus();
+            } else {
+                this.txtBoxVIN.Focus();
+            }
+            formPwd.Dispose();
         }
     }
 
