@@ -192,13 +192,13 @@
             // 
             // chart1
             // 
-            this.chart1.BackColor = System.Drawing.SystemColors.Control;
-            chartArea1.BackColor = System.Drawing.SystemColors.Control;
+            this.chart1.BackColor = System.Drawing.Color.Transparent;
+            chartArea1.BackColor = System.Drawing.Color.Transparent;
             chartArea1.Name = "ChartArea1";
             this.chart1.ChartAreas.Add(chartArea1);
             this.tblLayoutMain.SetColumnSpan(this.chart1, 2);
             this.chart1.Dock = System.Windows.Forms.DockStyle.Fill;
-            legend1.BackColor = System.Drawing.SystemColors.Control;
+            legend1.BackColor = System.Drawing.Color.Transparent;
             legend1.DockedToChartArea = "ChartArea1";
             legend1.Name = "Legend1";
             this.chart1.Legends.Add(legend1);

@@ -50,7 +50,7 @@ namespace Temperature_Sensor {
 
         private double GetSetupTemper(double dAmbient, double dSetupValue) {
             double dSetup;
-            if (m_cfg.Setting.Data.SetupValue > 1) {
+            if (dSetupValue > 1) {
                 // 绝对值
                 if (m_cfg.Setting.Data.Cooling) {
                     dSetup = dAmbient - dSetupValue;
@@ -82,8 +82,10 @@ namespace Temperature_Sensor {
         }
 
         private void TxtBoxSetupValue_TextChanged(object sender, EventArgs e) {
-            m_SetupValue = Convert.ToDouble(txtBoxSetupValue.Text);
-            txtBoxSetupTemper.Text = GetSetupTemper(m_dAmbient, m_SetupValue).ToString("F2");
+            if (txtBoxSetupValue.Text.Trim().Length > 0) {
+                m_SetupValue = Convert.ToDouble(txtBoxSetupValue.Text);
+                txtBoxSetupTemper.Text = GetSetupTemper(m_dAmbient, m_SetupValue).ToString("F2");
+            }
         }
 
         private void CmbBoxCooling_SelectedIndexChanged(object sender, EventArgs e) {
