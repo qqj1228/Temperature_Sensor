@@ -388,13 +388,17 @@ namespace Temperature_Sensor {
 
         private void OnTimeBlink(object source, System.Timers.ElapsedEventArgs e) {
             if (m_timerBlink != null && m_timerBlink.Enabled) {
-                this.Invoke((EventHandler)delegate {
-                    if (m_bBlink && lblInfo.Text.Length > 0) {
-                        lblInfo.Text = string.Empty;
-                    } else {
-                        lblInfo.Text = m_strInfo;
-                    }
-                });
+                try {
+                    this.Invoke((EventHandler)delegate {
+                        if (m_bBlink && lblInfo.Text.Length > 0) {
+                            lblInfo.Text = string.Empty;
+                        } else {
+                            lblInfo.Text = m_strInfo;
+                        }
+                    });
+                } catch (ObjectDisposedException) {
+                    // 关闭窗口后仍有一定几率会进入主UI线程，此时访问界面元素会引发此异常，直接忽略即可
+                }
             }
         }
 
