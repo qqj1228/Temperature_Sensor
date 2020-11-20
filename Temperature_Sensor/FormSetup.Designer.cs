@@ -25,6 +25,7 @@
         private void InitializeComponent() {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormSetup));
             this.grpBoxPwd = new System.Windows.Forms.GroupBox();
+            this.btnPwd = new System.Windows.Forms.Button();
             this.txtBoxNewPwd2 = new System.Windows.Forms.TextBox();
             this.txtBoxNewPwd1 = new System.Windows.Forms.TextBox();
             this.txtBoxOriginalPwd = new System.Windows.Forms.TextBox();
@@ -33,6 +34,7 @@
             this.label1 = new System.Windows.Forms.Label();
             this.btnOK = new System.Windows.Forms.Button();
             this.grpBoxSetup = new System.Windows.Forms.GroupBox();
+            this.btnCancel = new System.Windows.Forms.Button();
             this.txtBoxSuccessiveValue = new System.Windows.Forms.TextBox();
             this.grpBoxExample = new System.Windows.Forms.GroupBox();
             this.txtBoxSetupTemper = new System.Windows.Forms.TextBox();
@@ -48,8 +50,6 @@
             this.label5 = new System.Windows.Forms.Label();
             this.txtBoxSetupValue = new System.Windows.Forms.TextBox();
             this.label4 = new System.Windows.Forms.Label();
-            this.btnCancel = new System.Windows.Forms.Button();
-            this.btnPwd = new System.Windows.Forms.Button();
             this.grpBoxPwd.SuspendLayout();
             this.grpBoxSetup.SuspendLayout();
             this.grpBoxExample.SuspendLayout();
@@ -70,6 +70,16 @@
             this.grpBoxPwd.TabIndex = 0;
             this.grpBoxPwd.TabStop = false;
             this.grpBoxPwd.Text = "修改管理员密码";
+            // 
+            // btnPwd
+            // 
+            this.btnPwd.Location = new System.Drawing.Point(264, 102);
+            this.btnPwd.Name = "btnPwd";
+            this.btnPwd.Size = new System.Drawing.Size(75, 23);
+            this.btnPwd.TabIndex = 3;
+            this.btnPwd.Text = "确定";
+            this.btnPwd.UseVisualStyleBackColor = true;
+            this.btnPwd.Click += new System.EventHandler(this.BtnPwd_Click);
             // 
             // txtBoxNewPwd2
             // 
@@ -150,6 +160,16 @@
             this.grpBoxSetup.TabIndex = 1;
             this.grpBoxSetup.TabStop = false;
             this.grpBoxSetup.Text = "修改温度设定";
+            // 
+            // btnCancel
+            // 
+            this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.btnCancel.Location = new System.Drawing.Point(278, 219);
+            this.btnCancel.Name = "btnCancel";
+            this.btnCancel.Size = new System.Drawing.Size(75, 23);
+            this.btnCancel.TabIndex = 6;
+            this.btnCancel.Text = "取消";
+            this.btnCancel.UseVisualStyleBackColor = true;
             // 
             // txtBoxSuccessiveValue
             // 
@@ -288,28 +308,8 @@
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(120, 12);
             this.label4.TabIndex = 0;
-            this.label4.Text = "温度设定值系数：";
+            this.label4.Text = "温度设定值/系数：";
             this.label4.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            // 
-            // btnCancel
-            // 
-            this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.btnCancel.Location = new System.Drawing.Point(278, 219);
-            this.btnCancel.Name = "btnCancel";
-            this.btnCancel.Size = new System.Drawing.Size(75, 23);
-            this.btnCancel.TabIndex = 6;
-            this.btnCancel.Text = "取消";
-            this.btnCancel.UseVisualStyleBackColor = true;
-            // 
-            // btnPwd
-            // 
-            this.btnPwd.Location = new System.Drawing.Point(264, 102);
-            this.btnPwd.Name = "btnPwd";
-            this.btnPwd.Size = new System.Drawing.Size(75, 23);
-            this.btnPwd.TabIndex = 3;
-            this.btnPwd.Text = "确定";
-            this.btnPwd.UseVisualStyleBackColor = true;
-            this.btnPwd.Click += new System.EventHandler(this.BtnPwd_Click);
             // 
             // FormSetup
             // 

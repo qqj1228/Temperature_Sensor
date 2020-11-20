@@ -11,7 +11,7 @@
   <!-- 温度采样时间间隔，单位ms -->
   <Interval>500</Interval>
   <!-- 温度采样总时间，单位s -->
-  <TotalTime>10</TotalTime>
+  <TotalTime>60</TotalTime>
   <!-- 数据库IP地址 -->
   <DBIP>127.0.0.1</DBIP>
   <!-- 数据库端口号 -->
@@ -20,18 +20,20 @@
   <DBUser>sa</DBUser>
   <!-- 数据库密码 -->
   <DBPwd>sh49</DBPwd>
-  <!-- 温度设定值，用于计算设定温度，小于1为比率，大于1为绝对值 -->
-  <SetupValue>0.25</SetupValue>
   <!-- 空调工作模式 -->
   <Cooling>true</Cooling>
-  <!-- 用哪个温度点作为评判标准，0：全部，1：温度点1，2：温度点2 -->
-  <Temper>0</Temper>
-  <!-- 是否合格的评判标准，1：平均值，2：连续点 -->
-  <Rule>1</Rule>
-  <!-- 连续点设定值，小于1为比率，大于1为绝对值 -->
-  <SuccessiveValue>0.5</SuccessiveValue>
+  <!-- 连续几辆车检测失败将提示报警 -->
+  <TestFailedQty>3</TestFailedQty>
   <!-- 是否使用引擎转速来判断空调开启状态 -->
   <UsingRPM>false</UsingRPM>
   <!-- 最低怠速转速，大于等于该转速的话即认为空调已打开 -->
   <IdleRPMMin>600</IdleRPMMin>
+  <!-- 用哪个温度点作为评判标准，0：全部，1：温度点1，2：温度点2 -->
+  <Temper>0</Temper>
+  <!-- 是否合格的评判标准，0：绝对值，1：平均值，2：连续点 -->
+  <Rule>0</Rule>
+  <!-- 温度设定值，用于计算设定温度，小于1为比率，大于1为绝对值 -->
+  <SetupValue>10</SetupValue>
+  <!-- 连续点设定值，小于1为比率，大于1为绝对值 -->
+  <SuccessiveValue>0.5</SuccessiveValue>
 </Setting>

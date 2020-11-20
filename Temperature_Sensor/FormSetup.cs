@@ -39,7 +39,7 @@ namespace Temperature_Sensor {
             cmbBoxTemper.Items.Add("温度点1");
             cmbBoxTemper.Items.Add("温度点2");
             cmbBoxTemper.SelectedIndex = m_cfg.Setting.Data.Temper;
-            cmbBoxRule.Items.Add("温度曲线拟合");
+            cmbBoxRule.Items.Add("温度绝对值");
             cmbBoxRule.Items.Add("温度采样平均值");
             cmbBoxRule.Items.Add("连续温度采样");
             cmbBoxRule.SelectedIndex = m_cfg.Setting.Data.Rule;
@@ -49,20 +49,26 @@ namespace Temperature_Sensor {
         }
 
         private double GetSetupTemper(double dAmbient, double dSetupValue) {
-            double dSetup;
-            if (dSetupValue > 1) {
-                // 绝对值
-                if (m_cfg.Setting.Data.Cooling) {
-                    dSetup = dAmbient - dSetupValue;
+            double dSetup = -273.15;
+            if (cmbBoxRule.SelectedIndex == 0) {
+                // 温度绝对值
+                dSetup = dSetupValue;
+            } else if (cmbBoxRule.SelectedIndex > 0) {
+                // 温差
+                if (dSetupValue > 1) {
+                    // 温差绝对值
+                    if (m_cfg.Setting.Data.Cooling) {
+                        dSetup = dAmbient - dSetupValue;
+                    } else {
+                        dSetup = dAmbient + dSetupValue;
+                    }
                 } else {
-                    dSetup = dAmbient + dSetupValue;
-                }
-            } else {
-                // 比率
-                if (m_cfg.Setting.Data.Cooling) {
-                    dSetup = dAmbient * (1 - dSetupValue);
-                } else {
-                    dSetup = dAmbient * (1 + dSetupValue);
+                    // 温差比率
+                    if (m_cfg.Setting.Data.Cooling) {
+                        dSetup = dAmbient * (1 - dSetupValue);
+                    } else {
+                        dSetup = dAmbient * (1 + dSetupValue);
+                    }
                 }
             }
             return dSetup;
@@ -102,6 +108,7 @@ namespace Temperature_Sensor {
 
         private void CmbBoxRule_SelectedIndexChanged(object sender, EventArgs e) {
             m_Rule = cmbBoxRule.SelectedIndex;
+            txtBoxSetupTemper.Text = GetSetupTemper(m_dAmbient, m_SetupValue).ToString("F2");
         }
 
         private void TxtBoxSuccessiveValue_TextChanged(object sender, EventArgs e) {

@@ -224,20 +224,30 @@ namespace Temperature_Sensor {
                         this.lblTemper1.Text = GetDisplay(tempers[0]) + "℃";
                         this.lblTemper2.Text = GetDisplay(tempers[1]) + "℃";
                     });
+                    if (m_cfg.Setting.Data.Rule == 0) {
+                        if (m_tester.GetResult0(m_dSetup, out double dLastTemper1, out double dLastTemper2)) {
+                            m_ctsTesting.Cancel();
+                            SafeFinishTest();
+                        }
+                    }
                 } catch (ObjectDisposedException ex) {
                     m_log.TraceWarning(ex.Message);
                 }
                 --m_totalPoint;
             } else {
-                // 如果“m_inFinishing == 0”则表示没有线程正在执行FinishTest()
-                // 可以安全进入并执行该函数，否则不执行，保证线程安全
-                if (Interlocked.Exchange(ref m_inFinishing, 1) == 0) {
-                    FinishTest();
-                    // 延时一个采样间隔时间，保证定时器结束后不会有已进入线程池的Elapsed事件处理函数有重入
-                    Thread.Sleep(m_cfg.Setting.Data.Interval);
-                    // 执行完后将m_inFinishing置0
-                    Interlocked.Exchange(ref m_inFinishing, 0);
-                }
+                SafeFinishTest();
+            }
+        }
+
+        private void SafeFinishTest() {
+            // 如果“m_inFinishing == 0”则表示没有线程正在执行FinishTest()
+            // 可以安全进入并执行该函数，否则不执行，保证线程安全
+            if (Interlocked.Exchange(ref m_inFinishing, 1) == 0) {
+                FinishTest();
+                // 延时一个采样间隔时间，保证定时器结束后不会有已进入线程池的Elapsed事件处理函数有重入
+                Thread.Sleep(m_cfg.Setting.Data.Interval);
+                // 执行完后将m_inFinishing置0
+                Interlocked.Exchange(ref m_inFinishing, 0);
             }
         }
 
@@ -249,8 +259,14 @@ namespace Temperature_Sensor {
             double dAverage2 = 0;
             double dCount1 = 0;
             double dCount2 = 0;
+            double dLastTemper1 = 0;
+            double dLastTemper2 = 0;
             if (!m_bLoop) {
                 switch (m_cfg.Setting.Data.Rule) {
+                case 0:
+                    bResult = m_tester.GetResult0(m_dSetup, out dLastTemper1, out dLastTemper2);
+                    m_log.TraceInfo(string.Format("Get the test result: {0}, last: {1}℃/{2}℃", bResult, dLastTemper1.ToString("F2"), dLastTemper2.ToString("F2")));
+                    break;
                 case 1:
                     bResult = m_tester.GetResult1(m_dSetup, out dAverage1, out dAverage2);
                     m_log.TraceInfo(string.Format("Get the test result: {0}, average: {1}℃/{2}℃", bResult, dAverage1.ToString("F2"), dAverage2.ToString("F2")));
@@ -298,6 +314,20 @@ namespace Temperature_Sensor {
                         this.lblInfo.Text = "不合格";
                     }
                     switch (m_cfg.Setting.Data.Rule) {
+                    case 0:
+                        this.lblInfo.Text += ", 当前温度: ";
+                        switch (m_cfg.Setting.Data.Temper) {
+                        case 0:
+                            this.lblInfo.Text += dLastTemper1.ToString("F2") + "℃/" + dLastTemper2.ToString("F2") + "℃";
+                            break;
+                        case 1:
+                            this.lblInfo.Text += dLastTemper1.ToString("F2") + "℃";
+                            break;
+                        case 2:
+                            this.lblInfo.Text += dLastTemper2.ToString("F2") + "℃";
+                            break;
+                        }
+                        break;
                     case 1:
                         this.lblInfo.Text += ", 平均温度: ";
                         switch (m_cfg.Setting.Data.Temper) {
@@ -316,7 +346,6 @@ namespace Temperature_Sensor {
                         this.lblInfo.Text += ", 连续合格温度点";
                         if (m_cfg.Setting.Data.SuccessiveValue > 1) {
                             this.lblInfo.Text += "(" + m_cfg.Setting.Data.SuccessiveValue.ToString("F0") + ")";
-                            // 绝对值
                             switch (m_cfg.Setting.Data.Temper) {
                             case 0:
                                 this.lblInfo.Text += "个数: " + dCount1.ToString("F0") + "个/" + dCount2.ToString("F0") + "个";
@@ -330,7 +359,6 @@ namespace Temperature_Sensor {
                             }
                         } else {
                             this.lblInfo.Text += "(" + (m_cfg.Setting.Data.SuccessiveValue * 100).ToString("F2") + "%)";
-                            // 比率
                             switch (m_cfg.Setting.Data.Temper) {
                             case 0:
                                 this.lblInfo.Text += "占比: " + (dCount1 * 100).ToString("F2") + "%/" + (dCount2 * 100).ToString("F2") + "%";
@@ -427,19 +455,24 @@ namespace Temperature_Sensor {
             double dAmbient = GetAmbientTemper();
             m_ctsAmbient.Cancel();
             if (dAmbient < ERROR_VAL) {
-                if (m_cfg.Setting.Data.SetupValue > 1) {
-                    // 绝对值
-                    if (m_cfg.Setting.Data.Cooling) {
-                        m_dSetup = dAmbient - m_cfg.Setting.Data.SetupValue;
-                    } else {
-                        m_dSetup = dAmbient + m_cfg.Setting.Data.SetupValue;
-                    }
+                if (m_cfg.Setting.Data.Rule == 0) {
+                    // 温度绝对值
+                    m_dSetup = m_cfg.Setting.Data.SetupValue;
                 } else {
-                    // 比率
-                    if (m_cfg.Setting.Data.Cooling) {
-                        m_dSetup = dAmbient * (1 - m_cfg.Setting.Data.SetupValue);
+                    if (m_cfg.Setting.Data.SetupValue > 1) {
+                        // 温差绝对值
+                        if (m_cfg.Setting.Data.Cooling) {
+                            m_dSetup = dAmbient - m_cfg.Setting.Data.SetupValue;
+                        } else {
+                            m_dSetup = dAmbient + m_cfg.Setting.Data.SetupValue;
+                        }
                     } else {
-                        m_dSetup = dAmbient * (1 + m_cfg.Setting.Data.SetupValue);
+                        // 温差比率
+                        if (m_cfg.Setting.Data.Cooling) {
+                            m_dSetup = dAmbient * (1 - m_cfg.Setting.Data.SetupValue);
+                        } else {
+                            m_dSetup = dAmbient * (1 + m_cfg.Setting.Data.SetupValue);
+                        }
                     }
                 }
                 // 等待开启空调

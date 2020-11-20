@@ -344,7 +344,61 @@ namespace Temperature_Sensor {
             }
         }
 
+        public bool GetResult0(double dSTD, out double dLastTemper1, out double dLastTemper2) {
+            bool bRet = false;
+            bool bResult;
+            dLastTemper1 = 0;
+            dLastTemper2 = 0;
+            bResult = double.TryParse(m_dtTemper.Rows[m_dtTemper.Rows.Count - 1]["Temper1"].ToString(), out double iTemper);
+            if (bResult) {
+                dLastTemper1 = iTemper;
+            }
+            bResult = double.TryParse(m_dtTemper.Rows[m_dtTemper.Rows.Count - 1]["Temper2"].ToString(), out iTemper);
+            if (bResult) {
+                dLastTemper2 = iTemper;
+            }
+            if (m_cfg.Setting.Data.Cooling) {
+                switch (m_cfg.Setting.Data.Temper) {
+                case 0:
+                    if (dSTD >= dLastTemper1 && dSTD >= dLastTemper2) {
+                        bRet = true;
+                    }
+                    break;
+                case 1:
+                    if (dSTD >= dLastTemper1) {
+                        bRet = true;
+                    }
+                    break;
+                case 2:
+                    if (dSTD >= dLastTemper2) {
+                        bRet = true;
+                    }
+                    break;
+                }
+            } else {
+                switch (m_cfg.Setting.Data.Temper) {
+                case 0:
+                    if (dSTD <= dLastTemper1 && dSTD <= dLastTemper2) {
+                        bRet = true;
+                    }
+                    break;
+                case 1:
+                    if (dSTD <= dLastTemper1) {
+                        bRet = true;
+                    }
+                    break;
+                case 2:
+                    if (dSTD <= dLastTemper2) {
+                        bRet = true;
+                    }
+                    break;
+                }
+            }
+            return bRet;
+        }
+
         public bool GetResult1(double dSTD, out double dAverage1, out double dAverage2) {
+            bool bRet = false;
             bool bResult;
             int counter1 = 0;
             int counter2 = 0;
@@ -364,7 +418,6 @@ namespace Temperature_Sensor {
             }
             dAverage1 /= counter1;
             dAverage2 /= counter2;
-            bool bRet = false;
             if (m_cfg.Setting.Data.Cooling) {
                 switch (m_cfg.Setting.Data.Temper) {
                 case 0:
